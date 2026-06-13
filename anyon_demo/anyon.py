@@ -1,0 +1,46 @@
+from enum import Enum
+
+"""
+1 × 1 = 1
+1 × τ = τ
+τ × 1 = τ
+τ × τ = 1 + τ
+"""
+
+class Charge(Enum):   
+    VACUUM = "1"
+    TAU = "τ"
+
+
+class Anyon:
+
+    VALID_CHARGES = {Charge.TAU, Charge.VACUUM}
+        
+
+    def __init__(self, anyon_id, charge = Charge.TAU):
+        
+        if charge not in self.VALID_CHARGES:
+            raise ValueError(f"Invalid charge: {charge}")
+        
+
+        self.anyon_id = anyon_id
+        self.charge = charge
+        
+    def get_id(self):
+        return self.anyon_id
+    def get_charge(self):
+        return self.charge.value
+
+    def __str__(self):
+        return f"{self.anyon_id}:{self.charge.value}"
+    
+    def __repr__(self):
+        return f"{self.anyon_id}:{self.charge.value}"
+
+    def is_vacuum(self) -> bool:
+        return self.charge == Charge.VACUUM
+
+
+    def is_tau(self) -> bool:
+        return self.charge == Charge.TAU
+

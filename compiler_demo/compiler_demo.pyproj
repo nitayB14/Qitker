@@ -2,15 +2,15 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>3da53e55-0372-4c94-8bac-8b6df46bc2cd</ProjectGuid>
+    <ProjectGuid>08866c27-6e6e-4d01-8fbe-4a2803aba319</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>qulen.py</StartupFile>
+    <StartupFile>compiler_demo.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
-    <Name>qulen</Name>
-    <RootNamespace>qulen</RootNamespace>
+    <Name>compiler_demo</Name>
+    <RootNamespace>compiler_demo</RootNamespace>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -21,11 +21,11 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="circuit.py" />
+    <Compile Include="compiler_demo.py" />
     <Compile Include="error.py" />
     <Compile Include="operation.py" />
-    <Compile Include="circuit.py" />
     <Compile Include="qubit.py" />
-    <Compile Include="qulen.py" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in
