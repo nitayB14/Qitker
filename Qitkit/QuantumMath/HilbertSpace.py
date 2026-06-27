@@ -69,3 +69,29 @@ class hilbertSpace():
 
         return results 
 
+    def gate_fidelity(self, U_target, U):
+        d = U.shape[0]
+        return abs(np.trace(U_target.conj().T @ U)) / d  
+
+    
+    def getMatrix(self, op):
+        if op == "H":
+            return fibonacciConst.H
+        elif op == "X":
+            return fibonacciConst.X
+        elif op == "Y":
+            return fibonacciConst.Y
+        elif op == "Z":
+            return fibonacciConst.Z
+        elif op == "S":
+            return fibonacciConst.S
+        elif op == "T":
+            return fibonacciConst.T
+
+
+
+    """
+    def gate_error_percent(self, U_target, U):
+        fidelity = self.gate_fidelity(U_target, U)
+        return (1 - fidelity) * 100
+    """

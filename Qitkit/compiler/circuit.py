@@ -70,16 +70,20 @@ class circuit:
         self.ex = execution.execution(self)
 
 
-    def measure(self, shots=1000):
+    def measure(self, shots=1000, debug=False):
         self.shots = shots
 
-             
+        
+        if debug:
+            print("[Debug]\n----------------------------------------------")
+            circuitReporter.getAnyonMove(self.ex.getMoveList())
+            circuitReporter.getFinalMatrix(self.ex)
         
         compilation = "\n[Compilation]\n----------------------------------------------\n"
         compilation += f"Total gates:        : {circuitReporter.getTotalGates(self)}\n"
         compilation += f"Total braids:       : {circuitReporter.getTotalBraids(self.ex)}\n"
-        compilation += f"Shots number:       : {shots}"
-
+        compilation += f"Shots number:       : {shots}\n"
+        compilation += f"Fidelity:           : {circuitReporter.getFidelity(self.ex)}"
 
 
         resultsReport = "\n[Results]\n----------------------------------------------\n"

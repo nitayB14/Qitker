@@ -21,6 +21,9 @@ class logicalQubit():
             anyons=anyons_default,
             total_charge=Charge.VACUUM
         )
+
+        self.reportList = np.append(self.reportList, f"Start          {(self.tree.structure)}") 
+
     # Applies the specified braid generator (σi or σi⁻¹).       
     def sigma(self, index, state, hilbertOp):
         state = hilbertOp.sigma(index, state)
@@ -46,13 +49,13 @@ class logicalQubit():
     def operationList(self, operations):
         for item in operations:
             self.sigma(item)
-            W
+            
 #############################################################################
     # Applies a positive braid exchange on the left anyon pair.   
     def leftSwitchPositive(self, index):                 # R
         first, second = self.tree.getLeftId()
         self.tree.RMove(first,second)
-        self.reportList = np.append(self.reportList, f"R12            {self.tree.structure}") 
+        self.reportList = np.append(self.reportList, f"12|R              {(self.tree.structure)}") 
 
     # Applies a positive braid exchange on the middle anyon pair.
     def middleSwitchPositive(self, index):              # FFRF^-1F^-1
@@ -60,20 +63,19 @@ class logicalQubit():
         self.tree.FMove()
         self.tree.RMove(first, second)
         self.tree.undoFmove()
-        #self.reportList = np.append(self.reportList, "FRF^(-1)")
-        self.reportList = np.append(self.reportList, f"FRF^(-1)       {self.tree.structure}") 
+        self.reportList = np.append(self.reportList, f"23|FRF^(-1)       {self.tree.structure}") 
 
     # Applies a positive braid exchange on the right anyon pair.
     def rightSwitchPositive(self, index):              #R
         first, second = self.tree.getRightId()
         self.tree.RMove(first, second)
-        self.reportList = np.append(self.reportList, "R")
+        self.reportList = np.append(self.reportList, f"34|R              {self.tree.structure}")
 
     # Applies the inverse braid exchange on the left anyon pair.
     def leftSwitchNegative(self, index):               # R^-1
         first, second = self.tree.getLeftId()
         self.tree.undoRMove(first,second)
-        self.reportList = np.append(self.reportList, "R^(-1)")
+        self.reportList = np.append(self.reportList, f"12|R^(-1)         {self.tree.structure}")
     
     # Applies the inverse braid exchange on the middle anyon pair.    
     def middleSwitchNegative(self, index):            #FFR^(-1)F^(-1)F^(-1)
@@ -81,14 +83,16 @@ class logicalQubit():
         self.tree.FMove()
         self.tree.undoRMove(first, second)
         self.tree.undoFmove()
-        self.reportList = np.append(self.reportList, "FR^(-1)F^(-1)")
+        self.reportList = np.append(self.reportList, f"23|FR^(-1)F^(-1)  {self.tree.structure}")
         
     # Applies the inverse braid exchange on the right anyon pair.    
     def rightSwitchNegative(self, index):             #R^-1
         first, second = self.tree.getRightId()
         self.tree.undoRMove(first, second)
-        self.reportList = np.append(self.reportList, "R^(-1)")
+        self.reportList = np.append(self.reportList, f"34|R^(-1)         {self.tree.structure}")
 #################################################################################
+    def getReportList(self):
+        return self.reportList
 
     def __repr__(self):
         return f"{self.tree}"

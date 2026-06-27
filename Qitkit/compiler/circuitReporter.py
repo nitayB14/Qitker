@@ -7,6 +7,10 @@
 #
 #
 #
+import subprocess
+
+
+
 class circuitReporter():
 
 
@@ -58,6 +62,17 @@ class circuitReporter():
 
 
     ######################################################################################
+    def getFinalMatrix(ex):
+        print(f"\nFinal matrix: {ex.getMatrix()}")
+        
+    def getFidelity(ex): 
+        return ex.getFidelity()
 
-    def getAproximationError(circuit): 
-        pass
+    
+
+    def getAnyonMove(anyonMoveList):
+        for i in anyonMoveList:
+            for vecId, operation in enumerate(i):
+                print(f"[{vecId:05d}]:    {operation}")
+        
+        

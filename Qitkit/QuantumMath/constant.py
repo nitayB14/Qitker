@@ -1,6 +1,13 @@
 import numpy as np
 
 class math_constant():
+    """
+
+
+
+
+    """
+
     phi = (1 + np.sqrt(5)) / 2
     #####################################################
     #R matrix

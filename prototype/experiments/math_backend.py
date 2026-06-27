@@ -124,6 +124,7 @@ def sigma_matrix(num):
 
 
 def sequence_to_matrix(sequence):
+
     U = np.eye(2, dtype=complex)
 
     for s in sequence:
@@ -207,6 +208,9 @@ def checkUT():
     print(f"T^4 -> Z fidelity: {gate_fidelity(Z, U4)*100:.4f}%")
     print(f"T^8 -> I fidelity: {gate_fidelity(np.eye(2), U8)*100:.4f}%")
 
+
+
+
 def main():
     state = np.array([1,0], dtype=complex)
     print("check T")
@@ -216,18 +220,6 @@ def main():
     check(state, T_SEQ_BETTER, T)
 
 
-    #checkUT()
-
-    #matrix = H
-    #matrix = X
-
-
-
-    #seq, fidelity, U = search_gate_random(matrix, length=60, attempts=50000)
-    #print("SEQ =", seq)
-    #print(f"fidelity: {fidelity*100:.4f}%")
-    #print(f"error: {(1-fidelity)*100:.4f}%")
-    #print(U)
 
     
 
