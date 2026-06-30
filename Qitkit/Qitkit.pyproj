@@ -28,6 +28,7 @@
     <Compile Include="compiler\circuitReporter.py" />
     <Compile Include="compiler\operation.py" />
     <Compile Include="compiler\qubit.py" />
+    <Compile Include="ExportCode\exportCode.py" />
     <Compile Include="QuantumMath\constant.py" />
     <Compile Include="QuantumMath\HilbertSpace.py" />
     <Compile Include="parser\execution.py" />
@@ -37,6 +38,7 @@
   <ItemGroup>
     <Folder Include="compiler\" />
     <Folder Include="anyons\" />
+    <Folder Include="ExportCode\" />
     <Folder Include="QuantumMath\" />
     <Folder Include="parser\" />
   </ItemGroup>

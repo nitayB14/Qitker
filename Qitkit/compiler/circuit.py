@@ -25,7 +25,9 @@ class circuit:
     def addQubit(self, qubit):
         self.qubitsNumber += 1
         self.qubitsArray.append(qubit)
-
+    
+    def getQubitsNumber(self):
+        return self.qubitsNumber
 
     #adding operation to operation vector
     def addOperation(self, op):
