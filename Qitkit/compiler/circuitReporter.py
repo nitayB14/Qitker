@@ -12,16 +12,53 @@ import subprocess
 
 
 class circuitReporter():
+    """
+    Responsible on Anyon DSL output
+
+    Responsibilities:
+        - Outputs
+    """
 
 
     def getHeadLine(): 
+        """
+        Information about project
+
+        Args:
+            - None
+
+        Returns:
+            - None
+        """
+        
         return """==============================================\n        Fibonacci Anyons Quantum DSL     \n==============================================\nVersion: 1.0.0-alpha\nDate: 23/06/2026\nRule: Independent researcher"""
     
+
     def getNumberOfQubits(circuit): 
+        """
+        Returning number of qubits
+
+        Args:
+            - circuit (circuit):
+
+        Returns:
+            - (int) number of qubits
+        """
+
         return circuit.qubitsNumber
     
     
     def getCircuitDraw(circuit): 
+        """
+        Returning draw of circuit
+
+        Args:
+            - circuit (circuit):
+
+        Returns:
+            - (string) draw of circuit
+        """
+
         s = ""
         for i in range(circuit.qubitsNumber):
             s += (f"q[{i}]:  ")
@@ -39,16 +76,46 @@ class circuitReporter():
         
         return s
 
+
     def getTotalGates(circuit):
+        """
+        Returning number of total gates
+
+        Args:
+            - circuit (circuit):
+
+        Returns:
+            - (int) number of gates
+        """
+
         return len(circuit.operationVector)
         
 
     def getTotalBraids(exec): 
+        """
+        Returning number of braids
+
+        Args:
+            - exec (execution):
+
+        Returns:
+            - (int) number of braids
+        """
+
         return exec.braidsNumber
 
-    #####################################################################################
-
+    
     def getPercentage(results):
+        """
+        Returning statistics of results
+
+        Args:
+            - results (dict):
+
+        Returns:
+            - (string) how many times each result appear
+        """
+
         total = sum(results.values())  # 1000
         s = ""
         for state, count in results.items():
@@ -57,20 +124,49 @@ class circuitReporter():
 
         return s
 
-    def getFinalVector(execute): 
-        return execute.getMatrix()
 
-
-    ######################################################################################
-    def getFinalMatrix(ex):
-        print(f"\nFinal matrix: {ex.getMatrix()}")
-        
     def getFidelity(ex): 
+        """
+        returning fidelity of circuit
+
+        Args:
+            - ex (execution):
+
+        Returns:
+            - (float) : fidelity
+        """
+        
         return ex.getFidelity()
 
+
+    def printFinalMatrix(ex):
+        """
+        Printing final matrix
+
+        Args:
+            - ex (execution):
+
+        Returns:
+            - None
+        """
+
+        print(f"\nFinal matrix:\n{ex.getMatrix()}")
+        
+    
     
 
-    def getAnyonMove(anyonMoveList):
+    def printAnyonMove(anyonMoveList):
+        """
+        Printing how anyons move 
+
+        Args:
+            - anyonMoveList (List):
+                list of anyon places
+
+        Returns:
+            - None
+        """
+
         for i in anyonMoveList:
             for vecId, operation in enumerate(i):
                 print(f"[{vecId:05d}]:    {operation}")

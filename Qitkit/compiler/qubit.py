@@ -2,14 +2,22 @@
 from compiler import operation
 from compiler import circuit
 
-op = operation.operation()
-"""
-class qubit - responsible on the qubit itself, calls to operation and manage the qubit
-              locate the qubit to a circuit, initialize with |0> or |1> or with H gate
+op = operation.operation() #class operation - to add operations to qubit
 
-"""
+
 class qubit:
+    """
+    Represents single qubit
+    
+    Attributes:
+        - quantumCircuit: circuit
+            The circuit of the qubit
+        - initialize: int
+            Control qubit initialize (can be 0 or 1 and if not apply H instantly)
+    """
 
+
+    #initialize class
     def __init__(self, quantumCircuit, initialize = None):
 
         if(type(quantumCircuit) == circuit.circuit):
@@ -27,27 +35,69 @@ class qubit:
 
         else:
             print("throw error")
-    #####################################################################################
+    
 
-    def H_gate(self):
+
+    """
+    Apply gate on qubit
+
+    Args:
+        - None
+
+    Returns:
+        - None
+    """
+    ##############################################
+    """ Call operation class to add H gate to circuit """
+    def H(self):
         op.apply_H(self, self.quantumCircuit)
-
-    def X_gate(self):
+    
+    def h(self):
+        self.H()
+    ##############################################
+    """ Call operation class to add X gate to circuit """
+    def X(self):
         op.apply_X(self, self.quantumCircuit)
 
-    def Y_gate(self):
+    def x(self):
+        self.X()
+
+    def flip(self):
+        self.X()
+    ##############################################
+    """ Call operation class to add Y gate to circuit """
+    def Y(self):
         op.apply_Y(self, self.quantumCircuit)
 
-    def Z_gate(self):
+    def y(self):
+        self.Y()
+    ##############################################
+    """ Call operation class to add Z gate to circuit """
+    def Z(self):
         op.apply_Z(self, self.quantumCircuit)
     
-    def S_gate(self):
+    def z(self):
+        self.Z()
+
+    def phase(self):
+        self.Z()
+    ##############################################
+    """ Call operation class to add S gate to circuit """
+    def S(self):
         op.apply_S(self, self.quantumCircuit)
 
-    def T_gate(self):
+    def s(self):
+        self.S()
+    ##############################################
+    """ Call operation class to add T gate to circuit """
+    def T(self):
         op.apply_T(self, self.quantumCircuit)
 
+    def t(self):
+        self.T()
+    ##############################################
 
+    #returning string with basic information on the qubit
     def __str__(self):
         return f"index: {self.quantumCircuit.getIndex(self)}, is initialize?: {self.initialize}"
     

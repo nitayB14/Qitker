@@ -5,13 +5,22 @@ from compiler.circuitReporter import circuitReporter
 
 
 
-"""
-class circuit - responsible on the quantum circuit
-                count qubits number and locate them to this circuit
-                buld vector of operations and add/erase logic gates
-                
-"""
+
 class circuit:
+    """
+    Represents a quantum circuit
+    
+    Attributes:
+        - operationVector : vector
+            the vector contain all the operations
+        - qubitsArray : array
+            all qubits list
+        - qubitsNumber : int
+            number of qubits
+        - ex : execution
+            executer to Anyon backend                
+    """
+
 
     #initialize class
     def __init__(self):
@@ -21,65 +30,135 @@ class circuit:
         self.qubitsNumber = 0
         self.ex = None
         
-    #adding qubit to circuit
+    
     def addQubit(self, qubit):
+        """
+        Adding qubit to circuit
+
+        Args:
+            - qubit (qubit):
+                Qubit object we add to circuit
+
+        Returns:
+            - None
+        """
+        
         self.qubitsNumber += 1
         self.qubitsArray.append(qubit)
     
+
     def getQubitsNumber(self):
+        """
+        Return how many qubits circuit contain
+
+        Args:
+            - None
+
+        Returns:
+            - (int) : number of qubits
+        """
+        
         return self.qubitsNumber
 
-    #adding operation to operation vector
+
     def addOperation(self, op):
+        """
+        Adding operation to circuit
+
+        Args:
+            - op (opType):
+                operation object we add to the vector of operation
+
+        Returns:
+            - None
+        """
+        
         self.operationVector = np.append(self.operationVector, op)
     
-    #return qubit index
+
     def getIndex(self, qubit):
+        """
+        Return qubit index
+
+        Args:
+            - None
+
+        Returns:
+            - (int) : index of qubit
+        """
+        
         return self.qubitsArray.index(qubit)
 
-    #returning string with basic information on the circuit
-    def __str__(self):
-        y = ""
-        for j in self.qubitsArray:
-            y += f"{j}\n"
 
-        return f"number of qubits: {self.qubitsNumber}\n{y}"
-
-    
     def getOperationVector(self):
+        """
+        Return vector of operations
+
+        Args:
+            - None
+
+        Returns:
+            - (vector) : operation vector
+        """
+        
         return self.operationVector
     
-    #returning all the operations we added to the circuit
-    def getOperationList(self):
-        x = ""
-        for i in self.operationVector:
-            x += f"{i}\n"
-        
-        return f"operations list: \n{x}"
-    
+
     def details(self):
-        
-        
+        """
+        Print details on the circuit
+
+        Args:
+            - None
+
+        Returns:
+            - None
+        """
+
         print("\n[Circuit]")
         print("----------------------------------------------")
-        
         print(f"Qubits:             : {circuitReporter.getNumberOfQubits(self)}\n")
         print(circuitReporter.getCircuitDraw(self))
         
         
 
     def execute(self):
+        """
+        Execute circuit to Anyon backend
+
+        Args:
+            - None
+
+        Returns:
+            - None
+        """
+        
         self.ex = execution.execution(self)
 
 
     def measure(self, shots=1000, debug=False):
+        """
+        Responsible to measure circuit and create details as strings
+
+        Args:
+            - shots (int):
+                number of shots to run
+            - debug (bool):
+                In debug mode the function print extra details on circuit
+        Returns:
+            - compilation (string):
+                The string contains every compilation details on circuit
+            - resultReport (string):
+                The string contains every measure result of circuit
+        """
+        
         self.shots = shots
 
         
         if debug:
             print("[Debug]\n----------------------------------------------")
-            circuitReporter.getAnyonMove(self.ex.getMoveList())
-            circuitReporter.getFinalMatrix(self.ex)
+            circuitReporter.printAnyonMove(self.ex.getMoveList())
+            circuitReporter.printFinalMatrix(self.ex)
         
         compilation = "\n[Compilation]\n----------------------------------------------\n"
         compilation += f"Total gates:        : {circuitReporter.getTotalGates(self)}\n"
@@ -93,3 +172,13 @@ class circuit:
         
         return compilation, resultsReport
                  
+
+
+    
+    #returning string with basic information on the circuit
+    def __str__(self):
+        y = ""
+        for j in self.qubitsArray:
+            y += f"{j}\n"
+
+        return f"number of qubits: {self.qubitsNumber}\n{y}"

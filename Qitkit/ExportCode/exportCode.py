@@ -2,14 +2,31 @@ from qiskit import *
 
 
 class exportCode():
-    
-    def exportToQiskit(AnyonCircuit):
+    """
+    Export circuit to other quantum lenguage
 
-        qc = QuantumCircuit(AnyonCircuit.getQubitsNumber(), AnyonCircuit.getQubitsNumber())
+    Responsibilities:
+        - Qiskit Export
+    """
+    def exportToQiskit(AnyonCircuit):
+        """
+        Running all over the circuit and convert it to qiskit
+
+        Args:
+            - AnyonCircuit (circuit):
+                contains information about the circuit
+            
+        Returns:
+            - qc (qiskit circuit):
+                converted circuit to qiskit
+        """
+
+        
+        qc = QuantumCircuit(AnyonCircuit.getQubitsNumber(), AnyonCircuit.getQubitsNumber()) #creating qiskit circuit
         vector = AnyonCircuit.getOperationVector()
         
+        #loop over operation vector
         for op in vector:
-            #print("OP:", op, "NAME:", repr(op.getName()), "TARGET:", op.getTarget())
             if(op.getName() == "H"):
                 qc.h(op.getTarget())
             elif(op.getName() == "X"):
