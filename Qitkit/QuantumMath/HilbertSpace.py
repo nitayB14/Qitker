@@ -69,11 +69,19 @@ class hilbertSpace():
 
         return results 
 
-    def gate_fidelity(self, U_target, U):
-        d = U.shape[0]
-        return abs(np.trace(U_target.conj().T @ U)) / d  
-
     
+    def gate_fidelity(self, U_target, U):
+        d = U.shape[0]        
+        return abs(np.trace(U_target.conj().T @ U)) / d  
+    
+    """
+    def gate_fidelity(self, U_target, U_actual):
+        d = U_target.shape[0]
+        overlap = np.trace(U_target.conj().T @ U_actual)
+        fidelity = abs(overlap) ** 2 / (d ** 2)
+        return float(np.real(fidelity))
+    """
+
     def getMatrix(self, op):
         if op == "H":
             return fibonacciConst.H

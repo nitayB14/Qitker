@@ -41,8 +41,8 @@ class execution:
             if num == 0:
                 self.matrix = self.hilbertOp.getMatrix(op.getName())
             else:
-                self.matrix = self.matrix @ self.hilbertOp.getMatrix(op.getName())
-    
+                self.matrix =  self.hilbertOp.getMatrix(op.getName()) @ self.matrix
+
             
 
     #create new operation sequence and add to the logical qubit
@@ -61,7 +61,8 @@ class execution:
         for i in seq:
             self.braidsNumber += 1
             self.state = self.anyonCircuit[qubitTarget].sigma(i, self.state, self.hilbertOp)
-            self.U = self.anyonCircuit[qubitTarget].sigma(i, self.U, self.hilbertOp)
+            self.U = self.hilbertOp.sigma(i, self.U)
+            #self.U = self.anyonCircuit[qubitTarget].sigma(i, self.U, self.hilbertOp)
 
 
             

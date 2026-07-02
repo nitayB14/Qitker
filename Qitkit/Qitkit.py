@@ -11,26 +11,29 @@ def main():
     party = circuit()
     
     alice = qubit(party, 0)
-    alice.S_gate()
-    alice.S_gate()
-    alice.S_gate()
-    alice.S_gate()
+    alice.H()
+    alice.X()
+    
+    alice.y()
+    alice.z()
+    alice.phase()
+    alice.s()
+    alice.t()
     
 
     runOnFibonacci(party)
     
-    runOnQiskit(party)
+    #runOnQiskit(party)
     
 
 
     
 
 def runOnFibonacci(cirq):
-    cirq.details()
     cirq.execute()
 
-    comp, results = cirq.measure(1000)
-    
+    comp, results = cirq.measure(1000, True)
+    cirq.details()
     print(comp)
     print(results)
 
@@ -48,7 +51,7 @@ def runOnQiskit(qc):
     transpiled_qc = transpile(qc, simulation)
     
     #run the simulation
-    job = simulation.run(transpiled_qc, shots=2048)
+    job = simulation.run(transpiled_qc, shots=1000)
 
     #get result
     result = job.result()
