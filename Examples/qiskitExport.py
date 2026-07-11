@@ -1,6 +1,11 @@
-from compiler.qubit import qubit
-from compiler.circuit import circuit
-from ExportCode.exportCode import exportToQiskit
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).resolve().parent.parent))
+
+from qitker import circuit, qubit, export_to
+
+
 
 from qiskit_aer import Aer
 from qiskit import *
@@ -8,42 +13,44 @@ from qiskit.visualization import plot_histogram
 import matplotlib.pyplot as plt
 from qiskit.quantum_info import Operator
 
+
 def main():
+
     party = circuit()
+    
     alice = qubit(party, 0)
 
+    #H Gate
     alice.superPosition()
+    alice.H()
+    alice.h()
+
+    #Y Gate
     alice.flip()
+    alice.X()
+    alice.x()
+
+    #Y Gate
+    alice.flipPhase()
+    alice.Y()
+    alice.y()
+
+    #Z Gate
     alice.phase()
+    alice.Z()
+    alice.z()
 
-    runOnFibonacci(party)
-    
-    #runOnQiskit(party)
-    
+    #S Gate
+    alice.halfPhase()
+    alice.S()
+    alice.s()
 
+    #T Gate
+    alice.quarterPhase()
+    alice.T()
+    alice.t()
 
-    
-
-def runOnFibonacci(cirq):
-    cirq.execute()
-
-    comp, results = cirq.measure(1000)
-    cirq.details()
-    print(comp)
-    print(results)
-
-    
-
-
-
-
-def runOnQiskit(qc):
-    print("qiskit:")
-
-    qc = exportToQiskit(qc)
-
-    matrix = Operator(qc).data
-    print(matrix)
+    qc = export_to("qiskit", party)
 
     qc.draw('mpl')
 
@@ -67,5 +74,4 @@ def runOnQiskit(qc):
 
 
 
-if __name__ == "__main__":
-    main()
+main()
