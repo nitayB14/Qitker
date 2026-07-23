@@ -1,70 +1,51 @@
 import sys
 from pathlib import Path
 
+from qiskit import result
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
+
 from qitker import circuit, qubit
-
-
 
 from qiskit_aer import Aer
 from qiskit import *
 from qiskit.visualization import plot_histogram
 import matplotlib.pyplot as plt
-from qiskit.quantum_info import Operator
+
 
 
 def main():
-
-    #creating circuit
     party = circuit()
-    
-    #creating one qubit
-    alice = qubit(party, 0)
 
-    #H Gate
+    alice = qubit(party)
+    bob = qubit(party)
+
     alice.superPosition()
-    alice.H()
-    alice.h()
+    bob.halfPhase()
 
-    #Y Gate
-    alice.flip()
-    alice.X()
-    alice.x()
+    party.execute()
 
-    #Y Gate
-    alice.flipPhase()
-    alice.Y()
-    alice.y()
+    shots = 2000
 
-    #Z Gate
-    alice.phase()
-    alice.Z()
-    alice.z()
+    results = party.measure(shots)
 
-    #S Gate
-    alice.halfPhase()
-    alice.S()
-    alice.s()
+    party.details()
+    print(results)
 
-    #T Gate
-    alice.quarterPhase()
-    alice.T()
-    alice.t()
+    x, y = party.getMeasuredLists()
 
-    #export circuit to qiskit
     qc = party.exportCircuit("qiskit")
 
     """qiskit operations on circuit"""
     qc.draw('mpl')
 
-    qc.measure([0], [0])
+    qc.measure(x, y)
 
     simulation = Aer.get_backend('qasm_simulator')
     transpiled_qc = transpile(qc, simulation)
     
     #run the simulation
-    job = simulation.run(transpiled_qc, shots=1000)
+    job = simulation.run(transpiled_qc, shots=shots)
 
     #get result
     result = job.result()
@@ -74,8 +55,5 @@ def main():
     #draw circuit
     #qc.draw('mpl')
     plt.show() 
-
-
-
 
 main()

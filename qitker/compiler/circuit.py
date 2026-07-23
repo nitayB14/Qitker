@@ -11,6 +11,7 @@ import numpy as np
 from qitker.compiler import qubit
 from qitker.parser import execution
 from qitker.compiler.reporter.reporterObject import reporterObject
+from qitker.ExportCode.exportCode import export_to
 
 
 
@@ -33,10 +34,10 @@ class circuit:
     #initialize class
     def __init__(self):
         print("""==============================================\n        Fibonacci Anyons Quantum DSL     \n==============================================\nVersion: 1.0.0-alpha\nDate: 23/06/2026\nRule: Independent researcher""")        
-        self.operationVector = np.array([])
-        self.qubitsArray = []
-        self.qubitsNumber = 0
-        self.ex = None
+        self._operationVector = np.array([])
+        self._qubitsArray = []
+        self._qubitsNumber = 0
+        self._ex = None
         
     
     def addQubit(self, qubit):
@@ -51,8 +52,8 @@ class circuit:
             - None
         """
         
-        self.qubitsNumber += 1
-        self.qubitsArray.append(qubit)
+        self._qubitsNumber += 1
+        self._qubitsArray.append(qubit)
     
 
     def getQubitsNumber(self):
@@ -66,7 +67,37 @@ class circuit:
             - (int) : number of qubits
         """
         
-        return self.qubitsNumber
+        return self._qubitsNumber
+
+
+    def getQubitsNumberToMeasure(self):
+        """
+        Return how many qubits to measure circuit contain
+
+        Args:
+            - None
+
+        Returns:
+            - (int) : number of qubits to measure
+        """
+        num = 0
+        for i in self._qubitsArray:
+            if i.isToMeasure():
+                num += 1
+        return num
+
+
+    def getQubitsArray(self):
+        """
+        Return the array of qubits
+
+        Args:
+            - None
+
+        Returns:
+            - (array) : qubits array
+        """
+        return self._qubitsArray
 
 
     def addOperation(self, op):
@@ -81,7 +112,7 @@ class circuit:
             - None
         """
         
-        self.operationVector = np.append(self.operationVector, op)
+        self._operationVector = np.append(self._operationVector, op)
     
 
     def getIndex(self, qubit):
@@ -95,7 +126,7 @@ class circuit:
             - (int) : index of qubit
         """
         
-        return self.qubitsArray.index(qubit)
+        return self._qubitsArray.index(qubit)
 
 
     def getOperationVector(self):
@@ -109,7 +140,7 @@ class circuit:
             - (vector) : operation vector
         """
         
-        return self.operationVector
+        return self._operationVector
     
 
     def details(self):
@@ -125,7 +156,7 @@ class circuit:
 
         print("\n[Circuit]")
         print("----------------------------------------------")
-        print(f"Qubits:             : {self.qubitsNumber}\n")
+        print(f"Qubits:             : {self._qubitsNumber}\n")
         print(self.getCircuitDraw())
         
 
@@ -141,10 +172,10 @@ class circuit:
         """
 
         s = ""
-        for i in range(self.qubitsNumber):
+        for i in range(self._qubitsNumber):
             s += (f"q[{i}]:  ")
             
-            for j in self.operationVector:
+            for j in self._operationVector:
                 s += f"--"                  
                 if j.getTarget() == i:
                     s += j.getName()
@@ -168,7 +199,7 @@ class circuit:
             - None
         """
         
-        self.ex = execution.execution(self)
+        self._ex = execution.execution(self)
 
     def getAnyonMove(self, anyonMoveList):
         """
@@ -205,14 +236,14 @@ class circuit:
                 The string contains every measure result of circuit
         """
 
-        measureOutput = self.ex.measure(shots)
+        measureOutput = self._ex.measure(shots)
 
-        obj = reporterObject(self.getAnyonMove(self.ex.getMoveList()),
-                             self.ex.getMatrix(),
-                             len(self.operationVector),
-                             self.ex.braidsNumber,
+        obj = reporterObject(self.getAnyonMove(self._ex.getMoveList()),
+                             self._ex.getMatrix(),
+                             len(self._operationVector),
+                             self._ex.braidsNumber,
                              shots,
-                             self.ex.getFidelity(),
+                             self._ex.getFidelity(),
                              measureOutput)
         return obj
 
@@ -236,12 +267,49 @@ class circuit:
         return compilation, resultsReport
         """         
 
+    def exportCircuit(self, name):
+        """
+        export circuit to diffrent quantum lenguage
 
+        Args:
+            - name:
+                name of quantum lenguage
+
+        Returns:
+            - circuit exported from the quantum lenguage
+        """
+
+        return export_to(name, self)
     
+    def getMeasuredLists(self):
+        """
+        export circuit to diffrent quantum lenguage
+
+        Args:
+            - None
+
+        Returns:
+            - returning 2 list of measured qubits indexs
+        """
+
+        LogicalRegister = []
+        quantumRegister = []
+        x = 0
+        for i in self._qubitsArray:
+            if i.isToMeasure():
+                quantumRegister.append(i.getIndex())
+                LogicalRegister.append(x)
+                x += 1
+
+
+        return quantumRegister, LogicalRegister
+
+
+
     #returning string with basic information on the circuit
     def __str__(self):
         y = ""
-        for j in self.qubitsArray:
+        for j in self._qubitsArray:
             y += f"{j}\n"
 
-        return f"number of qubits: {self.qubitsNumber}\n{y}"
+        return f"number of qubits: {self._qubitsNumber}\n{y}"
