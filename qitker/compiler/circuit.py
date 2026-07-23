@@ -264,6 +264,20 @@ class circuit:
 
         return export_to(name, self)
     
+    def getMeasuredLists(self):
+        LogicalRegister = []
+        quantumRegister = []
+        x = 0
+        for i in self._qubitsArray:
+            if i.isToMeasure():
+                quantumRegister.append(i.getIndex())
+                LogicalRegister.append(x)
+                x += 1
+
+
+        return quantumRegister, LogicalRegister
+
+
 
     #returning string with basic information on the circuit
     def __str__(self):

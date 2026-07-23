@@ -5,8 +5,9 @@
     "\\qitker",
     "\\qitker\\compiler",
     "\\qitker\\compiler\\reporter",
+    "\\qitker\\ExportCode",
     "\\qitker\\parser"
   ],
-  "SelectedNode": "\\qitker\\compiler\\reporter\\reporterObject.py",
+  "SelectedNode": "\\Examples\\simpleCircuit.py",
   "PreviewInSolutionExplorer": false
 }

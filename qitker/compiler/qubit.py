@@ -44,6 +44,10 @@ class qubit:
         else:
             print("throw error")
     
+    def getIndex(self):
+        return self._quantumCircuit.getIndex(self)
+    def isToMeasure(self):
+        return self._measured
 
 
     """
@@ -119,5 +123,5 @@ class qubit:
 
     #returning string with basic information on the qubit
     def __str__(self):
-        return f"index: {self._quantumCircuit.getIndex(self)}, is initialize?: {self._initialize}"
+        return f"index: {self._quantumCircuit.getIndex(self)}, is to measure?: {self._measured}"
     
