@@ -3,7 +3,7 @@ from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
-from qitker import circuit, qubit, export_to
+from qitker import circuit, qubit
 
 
 
@@ -16,8 +16,10 @@ from qiskit.quantum_info import Operator
 
 def main():
 
+    #creating circuit
     party = circuit()
     
+    #creating one qubit
     alice = qubit(party, 0)
 
     #H Gate
@@ -50,8 +52,10 @@ def main():
     alice.T()
     alice.t()
 
-    qc = export_to("qiskit", party)
+    #export circuit to qiskit
+    qc = party.exportCircuit("qiskit")
 
+    """qiskit operations on circuit"""
     qc.draw('mpl')
 
     qc.measure([0], [0])

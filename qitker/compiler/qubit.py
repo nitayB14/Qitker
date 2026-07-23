@@ -26,15 +26,15 @@ class qubit:
 
 
     #initialize class
-    def __init__(self, quantumCircuit, initialize = None):
+    def __init__(self, quantumCircuit, initialize=0, measured=True):
 
         if(type(quantumCircuit) == circuit.circuit):
-            self.quantumCircuit = quantumCircuit
-            self.quantumCircuit.addQubit(self)
-            self.initialize = initialize
-            if initialize == None: #if user have not choose to initialize we apply H gate
-                self.H_gate()
-            elif initialize == 0:
+            self._quantumCircuit = quantumCircuit
+            self._quantumCircuit.addQubit(self)
+            self._initialize = initialize
+            self._measured = measured
+
+            if initialize == 0:
                 pass #already initialize to 0s
             elif initialize == 1:
                 self.X_gate() #apply not gate to initialize as 1
@@ -58,7 +58,7 @@ class qubit:
     ##############################################
     """ Call operation class to add H gate to circuit """
     def H(self):
-        op.apply_H(self, self.quantumCircuit)
+        op.apply_H(self, self._quantumCircuit)
     
     def h(self):
         self.H()
@@ -68,7 +68,7 @@ class qubit:
     ##############################################
     """ Call operation class to add X gate to circuit """
     def X(self):
-        op.apply_X(self, self.quantumCircuit)
+        op.apply_X(self, self._quantumCircuit)
 
     def x(self):
         self.X()
@@ -78,7 +78,7 @@ class qubit:
     ##############################################
     """ Call operation class to add Y gate to circuit """
     def Y(self):
-        op.apply_Y(self, self.quantumCircuit)
+        op.apply_Y(self, self._quantumCircuit)
 
     def y(self):
         self.Y()
@@ -88,7 +88,7 @@ class qubit:
     ##############################################
     """ Call operation class to add Z gate to circuit """
     def Z(self):
-        op.apply_Z(self, self.quantumCircuit)
+        op.apply_Z(self, self._quantumCircuit)
     
     def z(self):
         self.Z()
@@ -98,7 +98,7 @@ class qubit:
     ##############################################
     """ Call operation class to add S gate to circuit """
     def S(self):
-        op.apply_S(self, self.quantumCircuit)
+        op.apply_S(self, self._quantumCircuit)
 
     def s(self):
         self.S()
@@ -108,7 +108,7 @@ class qubit:
     ##############################################
     """ Call operation class to add T gate to circuit """
     def T(self):
-        op.apply_T(self, self.quantumCircuit)
+        op.apply_T(self, self._quantumCircuit)
 
     def t(self):
         self.T()
@@ -119,5 +119,5 @@ class qubit:
 
     #returning string with basic information on the qubit
     def __str__(self):
-        return f"index: {self.quantumCircuit.getIndex(self)}, is initialize?: {self.initialize}"
+        return f"index: {self._quantumCircuit.getIndex(self)}, is initialize?: {self._initialize}"
     

@@ -39,8 +39,8 @@ class execution:
         self.anyonCircuit = []
         self.braidsNumber = 0
 
-
-        for i in circuit.qubitsArray: #create the list of qubits
+        qubitsArray = circuit.getQubitsArray()
+        for i in qubitsArray: #create the list of qubits
             self.anyonCircuit.append(logicalQubit.logicalQubit())
         
         self.convert(circuit) # Convert high-level quantum gates into low-level braid operations.
