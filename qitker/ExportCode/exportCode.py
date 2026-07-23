@@ -47,7 +47,8 @@ def exportToQiskit(AnyonCircuit):
     """
 
     from qiskit import QuantumCircuit    
-    qc = QuantumCircuit(AnyonCircuit.getQubitsNumber(), AnyonCircuit.getQubitsNumber()) #creating qiskit circuit
+
+    qc = QuantumCircuit(AnyonCircuit.getQubitsNumber(), AnyonCircuit.getQubitsNumberToMeasure()) #creating qiskit circuit
     vector = AnyonCircuit.getOperationVector()
         
     #loop over operation vector

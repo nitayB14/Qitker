@@ -15,31 +15,26 @@ import matplotlib.pyplot as plt
 
 
 def main():
-    flipper = circuit()
+    party = circuit()
 
-    coin1 = qubit(flipper)
-    coin2 = qubit(flipper, measured=False)
-    coin3 = qubit(flipper)
-    coin1.superPosition()
-    
+    alice = qubit(party)
+    bob = qubit(party)
 
-    flipper.execute()
+    alice.superPosition()
+    bob.halfPhase()
 
+    party.execute()
 
     shots = 2000
 
-    results = flipper.measure(shots)
-    
-    flipper.details()
+    results = party.measure(shots)
+
+    party.details()
     print(results)
 
-    x, y = flipper.getMeasuredLists()
+    x, y = party.getMeasuredLists()
 
-    print(x)
-    print(y)
-
-
-    qc = flipper.exportCircuit("qiskit")
+    qc = party.exportCircuit("qiskit")
 
     """qiskit operations on circuit"""
     qc.draw('mpl')

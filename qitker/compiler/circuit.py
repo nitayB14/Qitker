@@ -69,6 +69,24 @@ class circuit:
         
         return self._qubitsNumber
 
+
+    def getQubitsNumberToMeasure(self):
+        """
+        Return how many qubits to measure circuit contain
+
+        Args:
+            - None
+
+        Returns:
+            - (int) : number of qubits to measure
+        """
+        num = 0
+        for i in self._qubitsArray:
+            if i.isToMeasure():
+                num += 1
+        return num
+
+
     def getQubitsArray(self):
         """
         Return the array of qubits
@@ -80,7 +98,6 @@ class circuit:
             - (array) : qubits array
         """
         return self._qubitsArray
-
 
 
     def addOperation(self, op):
@@ -265,6 +282,16 @@ class circuit:
         return export_to(name, self)
     
     def getMeasuredLists(self):
+        """
+        export circuit to diffrent quantum lenguage
+
+        Args:
+            - None
+
+        Returns:
+            - returning 2 list of measured qubits indexs
+        """
+
         LogicalRegister = []
         quantumRegister = []
         x = 0
