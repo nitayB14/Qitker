@@ -3,7 +3,7 @@ from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
-from qitker import circuit, qubit, export_to
+from qitker import circuit, qubit
 
 
 

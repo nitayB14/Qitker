@@ -10,7 +10,7 @@ from qitker import circuit, qubit
 from qiskit_aer import Aer
 from qiskit import *
 from qiskit.visualization import plot_histogram
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt 
 
 
 
@@ -21,7 +21,7 @@ def main():
     bob = qubit(party)
 
     alice.superPosition()
-    bob.halfPhase()
+    bob.superPosition()
 
     party.execute()
 

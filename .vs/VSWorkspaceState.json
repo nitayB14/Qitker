@@ -4,7 +4,6 @@
     "\\Examples",
     "\\qitker",
     "\\qitker\\compiler",
-    "\\qitker\\compiler\\reporter",
     "\\qitker\\ExportCode",
     "\\qitker\\parser"
   ],
