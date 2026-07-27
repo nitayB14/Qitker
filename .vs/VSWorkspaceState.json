@@ -1,12 +1,10 @@
 {
   "ExpandedNodes": [
     "",
-    "\\Examples",
     "\\qitker",
-    "\\qitker\\compiler",
-    "\\qitker\\ExportCode",
+    "\\qitker\\compiler\\reporter",
     "\\qitker\\parser"
   ],
-  "SelectedNode": "\\Examples\\simpleCircuit.py",
+  "SelectedNode": "\\qitker\\parser\\execution.py",
   "PreviewInSolutionExplorer": false
 }

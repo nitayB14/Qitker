@@ -18,42 +18,23 @@ def main():
     party = circuit()
 
     alice = qubit(party)
-    bob = qubit(party)
-
+    
+    #hadamard gate
     alice.superPosition()
-    bob.superPosition()
-
+    
+    #execution
     party.execute()
 
-    shots = 2000
+    #measure
+    result = party.measure()
 
-    results = party.measure(shots)
-
+    #print circuit details
     party.details()
-    print(results)
 
-    x, y = party.getMeasuredLists()
+    #print measurments details
+    print(result)
 
-    qc = party.exportCircuit("qiskit")
 
-    """qiskit operations on circuit"""
-    qc.draw('mpl')
 
-    qc.measure(x, y)
-
-    simulation = Aer.get_backend('qasm_simulator')
-    transpiled_qc = transpile(qc, simulation)
-    
-    #run the simulation
-    job = simulation.run(transpiled_qc, shots=shots)
-
-    #get result
-    result = job.result()
-    counts = result.get_counts()
-    
-    plot_histogram(counts)
-    #draw circuit
-    #qc.draw('mpl')
-    plt.show() 
 
 main()
