@@ -1,11 +1,10 @@
 {
   "ExpandedNodes": [
     "",
-    "\\Examples",
     "\\qitker",
     "\\qitker\\anyons",
     "\\qitker\\parser"
   ],
-  "SelectedNode": "\\Examples\\oneQubitOperations.py",
+  "SelectedNode": "\\qitker\\anyons\\AnyonOperation.py",
   "PreviewInSolutionExplorer": false
 }

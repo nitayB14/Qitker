@@ -1,6 +1,11 @@
 {
   "ExpandedNodes": [
-    ""
+    "",
+    "\\compiler",
+    "\\ExportCode",
+    "\\parser",
+    "\\QuantumMath"
   ],
+  "SelectedNode": "\\parser\\execution.py",
   "PreviewInSolutionExplorer": false
 }
