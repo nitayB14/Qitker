@@ -1,8 +1,9 @@
 {
   "ExpandedNodes": [
     "",
-    "\\Examples"
+    "\\Examples",
+    "\\qitker\\parser"
   ],
-  "SelectedNode": "\\Examples\\twoQubits.py",
+  "SelectedNode": "\\Examples\\qiskitExport.py",
   "PreviewInSolutionExplorer": false
 }
