@@ -1,10 +1,8 @@
 import json
 import numpy as np
 
-from qitker.anyons import logicalQubit
 from qitker.parser.sequenceOperation import sequenceOperation
-from qitker.QuantumMath.HilbertSpace import hilbertSpace
-
+from qitker.anyons.FusionSystem import FusionSystem
 
 seqOp = sequenceOperation()
 
@@ -31,23 +29,27 @@ class execution:
     # initialize execution class
     def __init__(self, circuit):
         
-        self.Approximation = np.eye(2, dtype=complex)
-        self.stateVector = np.array([1,0], dtype=complex)
-        self.idialMatrix = None
+        #self.Approximation = np.eye(2, dtype=complex)
+        #self.stateVector = np.array([1,0], dtype=complex)
+        #self.idialMatrix = None
         
-        self.hilbertOp = hilbertSpace()
-        self.anyonCircuit = []
-        self.braidsNumber = 0
+        #self.hilbertOp = hilbertSpace()
+        #self.anyonCircuit = []
+        
+        self._braidsNumber = 0
+        
+        self._circuit = circuit
+        self._fusionSystem = FusionSystem(self._circuit.getQubitsNumber())
 
-        qubitsArray = circuit.getQubitsArray()
-        for i in qubitsArray: #create the list of qubits
-            self.anyonCircuit.append(logicalQubit.logicalQubit())
+
+        #for i in qubitsArray: #create the list of qubits
+        #    self.anyonCircuit.append(logicalQubit.logicalQubit())
         
-        self.convert(circuit) # Convert high-level quantum gates into low-level braid operations.
+        #self.convert(circuit) # Convert high-level quantum gates into low-level braid operations.
 
 
   
-    def convert(self, circuit):
+    def convert(self):
         """
         Convert quantum operation(gate) to braids 
         Call fidelity function
@@ -60,32 +62,15 @@ class execution:
             - None
         """
         
-        op = circuit.getOperationVector()
-        self.fidelityMatrix(op)
+        op = self._circuit.getOperationVector()
+        #self._fusionSystem.createIdealMatrix(op)
+
         for i in op:
+            self._fusionSystem.addOperationToIdealMatrix(i)
             self.applyGate(i) #apply each gate appear in operation vector
 
+
     
-    def fidelityMatrix(self, opType):
-        """
-        create the idial matrix depends on operations
-
-        Args:
-            - circuit (circuit):
-                circuit of user
-
-        Returns:
-            - None
-        """
-        
-        for num, op in enumerate(opType):
-            if num == 0:
-                self.idialMatrix = self.hilbertOp.getMatrix(op.getName())
-            else:
-                self.idialMatrix =  self.hilbertOp.getMatrix(op.getName()) @ self.idialMatrix
-
-            
-
     def applyGate(self, opType):
         """
         Create new operation sequence and add to the logical qubit
@@ -102,6 +87,7 @@ class execution:
         target = opType.getTarget()
 
         seq = seqOp.getSeq(name)
+        
         self.applySequence(target, seq)
         
 
@@ -122,12 +108,11 @@ class execution:
         """
         
         for i in seq:
-            self.braidsNumber += 1
-            
+            self._braidsNumber += 1
+            self._fusionSystem.sigma(qubit_id=qubitTarget, index=i)
 
-
-            self.stateVector = self.anyonCircuit[qubitTarget].sigma(i, self.stateVector, self.hilbertOp)
-            self.Approximation = self.hilbertOp.sigma(i, self.Approximation)
+            #self.stateVector = self.anyonCircuit[qubitTarget].sigma(i, self.stateVector, self.hilbertOp)
+            #self.Approximation = self.hilbertOp.sigma(i, self.Approximation)
 
 
             
@@ -141,8 +126,9 @@ class execution:
         Returns:
             - (float) : fidelity
         """
+        return f"{self._fusionSystem.hilbertSpace.gate_fidelity() * 100:.4f}%"
 
-        return f"{self.hilbertOp.gate_fidelity(self.idialMatrix, self.Approximation)*100:.4f}%"
+        #return f"{self.hilbertOp.gate_fidelity(self.idialMatrix, self.Approximation)*100:.4f}%"
 
 
     def measure(self, shots):
@@ -157,7 +143,7 @@ class execution:
             (dict[int, int]): Measurement counts for each basis state.
         """
 
-        return self.hilbertOp.run_measurements(self.stateVector, shots)
+        return self._fusionSystem.hilbertSpace.run_measurements(shots=shots)
     
 
 
@@ -199,3 +185,25 @@ class execution:
             output += f"{index}: {qubit}\n"
 
         return output
+
+
+
+    """
+    def fidelityMatrix(self, opType):
+        create the idial matrix depends on operations
+
+        Args:
+            - circuit (circuit):
+                circuit of user
+
+        Returns:
+            - None
+        
+        
+        for num, op in enumerate(opType):
+            if num == 0:
+                self.idialMatrix = self.hilbertOp.getMatrix(op.getName())
+            else:
+                self.idialMatrix =  self.hilbertOp.getMatrix(op.getName()) @ self.idialMatrix
+            
+    """

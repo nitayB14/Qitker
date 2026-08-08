@@ -24,36 +24,43 @@ class reporterObject():
 	def __init__(self, anyonMove, finalMatrix, totalGates, totalBraids,
 			  shotsNumber, fidelity, percentage):
 
-		self.anyonMove = anyonMove
-		self.finalMatrix = finalMatrix
-		self.totalGates = totalGates
-		self.totalBraids = totalBraids
-		self.shotsNumber = shotsNumber
-		self.fidelity = fidelity
-		self.percentage = percentage
+		self._anyonMove = anyonMove
+		self._finalMatrix = finalMatrix
+		self._totalGates = totalGates
+		self._totalBraids = totalBraids
+		self._shotsNumber = shotsNumber
+		self._fidelity = fidelity
+		self._percentage = percentage
 
 
 	def getAnyonMove(self):
-		return self.anyonMove
+		return self._anyonMove
 
 	def getFinalMatrix(self):
-		return self.finalMatrix
+		return self._finalMatrix
 
 	def getTotalGates(self):
-		return self.totalGates
+		return self._totalGates
 
 	def getTotalBraids(self):
-		return self.totalBraids
+		return self._totalBraids
 
 	def getShotsNumber(self):
-		return self.shotsNumber
+		return self._shotsNumber
 
 	def getFidelity(self):
-		return self.fidelity
+		return self._fidelity
+
+	def getPercentageOpbject(self):
+		return self._percentage
 
 	def getPercentage(self):
-		return self.percentage
+		p = ""
+		for key, value in sorted(self._percentage.items(), key=lambda item: int(item[0], 2)):
+			percentage = (value / self._shotsNumber) * 100
+			p = p + (f"{key}: {value} shots  ;  {percentage:.2f}%\n")
 
+		return p
 
 
 
@@ -74,16 +81,16 @@ class reporterObject():
 
 		if debug:
 			reportStr += "[Debug]\n----------------------------------------------\n\n"
-			reportStr += str(self.anyonMove)
-			reportStr += f"\nFinal matrix:\n{self.finalMatrix}\n"
+			reportStr += str(self._anyonMove)
+			reportStr += f"\nFinal matrix:\n{self._finalMatrix}\n"
 
 		reportStr += "\n[Compilation]\n----------------------------------------------\n"
-		reportStr += "Total gates:        : " + str(self.totalGates) + '\n'
-		reportStr += "Total braids:       : " + str(self.totalBraids) + '\n'
-		reportStr += "Shots number:       : " + str(self.shotsNumber) + '\n'
-		reportStr += "Fidelity:           : " + str(self.fidelity) + '\n'
-		reportStr += "\n[Results]\n----------------------------------------------\n"
-		reportStr += str(self.percentage) + '\n'
+		reportStr += "Total gates:        : " + str(self._totalGates) + '\n'
+		reportStr += "Total braids:       : " + str(self._totalBraids) + '\n'
+		reportStr += "Shots number:       : " + str(self._shotsNumber) + '\n'
+		reportStr += "Fidelity:           : " + str(self._fidelity) + '\n'
+		reportStr += "\n\n[Results]\n----------------------------------------------\n"
+		reportStr += str(self.getPercentage()) + '\n'
 		
 		return reportStr
 

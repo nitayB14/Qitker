@@ -17,7 +17,7 @@ class sequenceOperation:
     """
 
     def __init__(self):
-        with open("Qitker//parser//braid_sequences.json", "r") as f:
+        with open("qitker//parser//braid_sequences.json", "r") as f:
             self.sequences= json.load(f)
 
     

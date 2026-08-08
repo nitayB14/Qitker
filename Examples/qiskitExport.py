@@ -22,35 +22,10 @@ def main():
     #creating one qubit
     alice = qubit(party, 0)
 
-    #H Gate
-    alice.superPosition()
-    alice.H()
-    alice.h()
-
-    #Y Gate
+    #Gates
+    alice.superPosition()    
     alice.flip()
-    alice.X()
-    alice.x()
-
-    #Y Gate
-    alice.flipPhase()
-    alice.Y()
-    alice.y()
-
-    #Z Gate
-    alice.phase()
-    alice.Z()
-    alice.z()
-
-    #S Gate
-    alice.halfPhase()
-    alice.S()
-    alice.s()
-
-    #T Gate
-    alice.quarterPhase()
-    alice.T()
-    alice.t()
+  
 
     #export circuit to qiskit
     qc = party.exportCircuit("qiskit")

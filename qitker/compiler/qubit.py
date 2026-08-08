@@ -33,11 +33,12 @@ class qubit:
             self._quantumCircuit.addQubit(self)
             self._initialize = initialize
             self._measured = measured
+            self._index = self._quantumCircuit.getIndex(self)
 
             if initialize == 0:
                 pass #already initialize to 0s
             elif initialize == 1:
-                self.X_gate() #apply not gate to initialize as 1
+                self.flip() #apply not gate to initialize as 1
             else:
                 print("number too big throw exception")
 
@@ -45,7 +46,8 @@ class qubit:
             print("throw error")
     
     def getIndex(self):
-        return self._quantumCircuit.getIndex(self)
+        return self._index
+
     def isToMeasure(self):
         return self._measured
 

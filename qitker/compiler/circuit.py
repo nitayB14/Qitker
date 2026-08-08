@@ -173,7 +173,10 @@ class circuit:
 
         s = ""
         for i in range(self._qubitsNumber):
-            s += (f"q[{i}]:  ")
+            if (self._qubitsArray[i].isToMeasure()):
+                s += (f"q[{i}]:  ")
+            else:
+                s += (f"A[{i}]:  ")
             
             for j in self._operationVector:
                 s += f"--"                  
@@ -198,8 +201,15 @@ class circuit:
         Returns:
             - None
         """
+        if len(self._qubitsArray) == 0:
+            raise TypeError("cannot execute algorithm without qubits")
+
+        if len(self._operationVector) == 0:
+            raise TypeError("cannot execute algorithm without gates")
         
         self._ex = execution.execution(self)
+        self._ex.convert()
+
 
     def getAnyonMove(self, anyonMoveList):
         """
@@ -236,15 +246,20 @@ class circuit:
                 The string contains every measure result of circuit
         """
 
+        self.execute()
+        
         measureOutput = self._ex.measure(shots)
+        filteredOutput = self.filtered(measureOutput)
+        
 
-        obj = reporterObject(self.getAnyonMove(self._ex.getMoveList()),
-                             self._ex.getMatrix(),
+        obj = reporterObject(self._ex._fusionSystem.get_operation_history(),
+                             self._ex._fusionSystem.hilbertSpace.get_unitary(),
                              len(self._operationVector),
-                             self._ex.braidsNumber,
+                             self._ex._braidsNumber,
                              shots,
                              self._ex.getFidelity(),
-                             measureOutput)
+                             filteredOutput)
+        
         return obj
 
         """
@@ -266,6 +281,28 @@ class circuit:
         
         return compilation, resultsReport
         """         
+
+
+
+    def filtered(self, measureOutput):
+        measuredIndexes = [qubit.getIndex() for qubit in self._qubitsArray if qubit.isToMeasure()]
+        filteredOutput = {}
+
+        if not measuredIndexes:
+            raise ValueError("Cannot measure circuit: no qubits are marked for measurement.")
+
+        for bitstring, count in measureOutput.items():
+            filteredBitstring = "".join(
+                bitstring[index]
+                for index in measuredIndexes
+            )
+
+            filteredOutput[filteredBitstring] = (
+                filteredOutput.get(filteredBitstring, 0) + count
+            )
+
+        return filteredOutput
+
 
     def exportCircuit(self, name):
         """

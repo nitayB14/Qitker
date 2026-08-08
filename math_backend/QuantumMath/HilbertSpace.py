@@ -1,4 +1,4 @@
-from qitker.QuantumMath.constant import math_constant
+from QuantumMath.constant import math_constant
 import numpy as np
 
 fibonacciConst = math_constant()
@@ -28,11 +28,6 @@ class HilbertSpace:
         self.ideal_operations = []
 
 
-
-
-
-
-
     #########################################################
 
     def _get_sigma_matrix(self, index: int) -> np.ndarray:
@@ -48,6 +43,7 @@ class HilbertSpace:
             -3: fibonacciConst.R34_inv,
         }
 
+        
         if index not in sigma_matrices:
             raise ValueError(
                 "sigma index must be one of: "
@@ -94,14 +90,10 @@ class HilbertSpace:
             qubit_id=qubit_id
         )
 
-        self.state_vector = (
-            global_operator @ self.state_vector
-        )
+        self.state_vector = (global_operator @ self.state_vector)
 
         if self.unitary is not None:
-            self.unitary = (
-                global_operator @ self.unitary
-            )
+            self.unitary = (global_operator @ self.unitary)
 
 
     def probs(self):
@@ -247,60 +239,4 @@ class HilbertSpace:
 
 
 
-    
-    """
-    def sigma(self, num, state):
-        
-        Applies the requested braid operation (σ₁, σ₂, σ₃ or their inverses)
-        to the given quantum state.
-
-        Parameters:
-            num (int): Braid index.
-            state (np.ndarray): Quantum state vector.
-
-        Returns:
-            np.ndarray: Updated quantum state.
-        
-
-        if num == 1:
-            state = self.apply_R12(state)
-        elif num == 2:
-            state = self.apply_R23(state)
-        elif num == 3:
-            state = self.apply_R34(state)
-        elif num == -1:
-            state = self.apply_reverseR12(state)
-        elif num == -2:
-            state = self.apply_reverseR23(state)
-        elif num == -3:
-            state = self.apply_reverseR34(state)
-        else:
-            raise ValueError("bad input")
-        return state
-    """
-
-
-    """
-    def getMatrix(self, op):
-        
-        Returns the reference matrix for a given quantum gate.
-
-        Parameters:
-            op (str): Gate name ("H", "X", "Y", "Z", "S", or "T").
-
-        Returns:
-            np.ndarray: Corresponding 2×2 quantum gate matrix.
-        
-        if op == "H":
-            return fibonacciConst.H
-        elif op == "X":
-            return fibonacciConst.X
-        elif op == "Y":
-            return fibonacciConst.Y
-        elif op == "Z":
-            return fibonacciConst.Z
-        elif op == "S":
-            return fibonacciConst.S
-        elif op == "T":
-            return fibonacciConst.T
-        """
+   

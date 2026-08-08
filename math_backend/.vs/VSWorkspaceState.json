@@ -1,8 +1,8 @@
 {
   "ExpandedNodes": [
     "",
-    "\\Examples"
+    "\\QuantumMath"
   ],
-  "SelectedNode": "\\Examples\\twoQubits.py",
+  "SelectedNode": "\\QuantumMath\\HilbertSpace.py",
   "PreviewInSolutionExplorer": false
 }
