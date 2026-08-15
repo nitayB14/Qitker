@@ -1,6 +1,6 @@
 
 
-from qitker.compiler.operations.opClasses import opType, gateOpType, controlledOpType, rotateOpType
+from qitker.compiler.operations.opClasses import controlledRotateOpType, opType, gateOpType, controlledOpType, rotateOpType
 
 
 #####################################################################################################
@@ -306,3 +306,61 @@ class operation:
         circuit.addOperation(op)
 
     ################################################################################
+        
+    def apply_controlled_rotate_X(self, targetQubit, controlQubits, angle, circuit):
+        if isinstance(controlQubits, list):
+            controllersIndexes = [
+                circuit.getIndex(controlQubit)
+                for controlQubit in controlQubits
+            ]
+        else:
+            controllersIndexes = [
+                circuit.getIndex(controlQubits)
+            ]
+
+        op = controlledRotateOpType(
+            gateName="RX",
+            target=circuit.getIndex(targetQubit),
+            controllers=controllersIndexes,
+            angle=angle
+        )
+        circuit.addOperation(op)
+    
+    def apply_controlled_rotate_Y(self, targetQubit, controlQubits, angle, circuit):
+        if isinstance(controlQubits, list):
+            controllersIndexes = [
+                circuit.getIndex(controlQubit)
+                for controlQubit in controlQubits
+            ]
+        else:
+            controllersIndexes = [
+                circuit.getIndex(controlQubits)
+            ]
+
+        op = controlledRotateOpType(
+            gateName="RY",
+            target=circuit.getIndex(targetQubit),
+            controllers=controllersIndexes,
+            angle=angle
+        )
+        circuit.addOperation(op)
+    
+    def apply_controlled_rotate_Z(self, targetQubit, controlQubits, angle, circuit):
+        if isinstance(controlQubits, list):
+            controllersIndexes = [
+                circuit.getIndex(controlQubit)
+                for controlQubit in controlQubits
+            ]
+        else:
+            controllersIndexes = [
+                circuit.getIndex(controlQubits)
+            ]
+
+        op = controlledRotateOpType(
+            gateName="RZ",
+            target=circuit.getIndex(targetQubit),
+            controllers=controllersIndexes,
+            angle=angle
+        )
+        circuit.addOperation(op)
+

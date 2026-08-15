@@ -1,3 +1,5 @@
+"""Compare two quantum registers with Grover-style phase amplification."""
+
 import sys
 from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parent.parent))
@@ -16,6 +18,7 @@ import matplotlib.pyplot as plt
 
 
 def oracle(reg1, reg2, marker):
+    """Phase-mark states in which both registers contain the same value."""
 
     marker.flipIf(reg1, where=reg2)
 
@@ -40,6 +43,7 @@ def diffuser(search):
 
 
 def main():
+    """Build, display, export, and simulate the register-search example."""
 
     #creating circuit
     party = circuit()
@@ -68,6 +72,7 @@ def main():
 
 
 def parseToQiskit(circuit):
+    """Export a Qitker circuit to Qiskit and plot measurement counts."""
     #export circuit to qiskit
     qc = circuit.exportCircuit("qiskit")
 

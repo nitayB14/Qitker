@@ -218,10 +218,13 @@ class qRegister:
 
     def flipPhaseIf(self,control, where=None, ancilla=None):
         self._controlledGate(control, "Y", where, ancilla)
+    
     def phaseIf(self,control, where=None, ancilla=None):
         self._controlledGate(control, "Z", where, ancilla)
-    def halfPhseIf(self,control, where=None, ancilla=None):
+    
+    def halfPhaseIf(self,control, where=None, ancilla=None):
         self._controlledGate(control, "S", where, ancilla)
+    
     def quarterPhaseIf(self,control, where=None, ancilla=None):
         self._controlledGate(control, "T", where, ancilla)
 
@@ -258,7 +261,7 @@ class qRegister:
                 if(opType == "X"):
                     regQubit.flipIf(control, where)
                 if(opType == "Y"):
-                    regQubit.flipPhase(control, where)
+                    regQubit.flipPhaseIf(control, where)
                 if(opType == "Z"):
                     regQubit.phaseIf(control, where)
                 if(opType == "S"):
@@ -279,7 +282,6 @@ class qRegister:
     def rotateX(self, angle):
         for regQubit in self._reg:
             regQubit.rotateX(angle)
-            #op.apply_rotate_X(regQubit, angle=angle, circuit=self._quantumCircuit)
 
     def RX(self, angle):
         self.rotateX(angle)
@@ -288,7 +290,6 @@ class qRegister:
     def rotateY(self, angle):
         for regQubit in self._reg:
             regQubit.rotateY(angle)
-            #op.apply_rotate_Y(regQubit, angle=angle, circuit=self._quantumCircuit)
 
     def RY(self, angle):
         self.rotateY(angle)
@@ -297,12 +298,54 @@ class qRegister:
     def rotateZ(self, angle):
         for regQubit in self._reg:
             regQubit.rotateZ(angle)
-            #op.apply_rotate_Z(regQubit, angle=angle, circuit=self._quantumCircuit)
 
     def RZ(self, angle):
         self.rotateZ(angle)
 
+    ######################################################################
+    def rotateXif(self,control, angle, where=None, ancilla=None):
+        self._controlledRotateGate(control, angle, "RX", where, ancilla)
+
+    def rotateYif(self,control, angle, where=None, ancilla=None):
+        self._controlledRotateGate(control, angle, "RY", where, ancilla)
     
+    def rotateZif(self,control, angle, where=None, ancilla=None):
+        self._controlledRotateGate(control, angle, "RZ", where, ancilla)
+    
+
+    def _controlledRotateGate(self, control, angle, opType, where=None, ancilla=None):
+        if isinstance(ancilla, qubit):
+            # Compute
+            if any(ancilla is target for target in self._reg):
+                raise ValueError(
+                    "ancilla cannot also be a target qubit"
+                )
+            ancilla.flipIf(control, where)
+
+            # Use
+            for regQubit in self._reg:
+                if(opType == "RX"):
+                    regQubit.rotateXif(ancilla, angle)
+                if(opType == "RY"):
+                    regQubit.rotateYif(ancilla, angle)
+                if(opType == "RZ"):
+                    regQubit.rotateZif(ancilla, angle)
+                
+            # Uncompute
+            ancilla.flipIf(control, where)
+
+        elif ancilla is None:
+            for regQubit in self._reg:
+                if(opType == "RX"):
+                    regQubit.rotateXif(control, angle, where)
+                if(opType == "RY"):
+                    regQubit.rotateYif(control, angle, where)
+                if(opType == "RZ"):
+                    regQubit.rotateZif(control, angle, where)
+                
+        else:
+            raise TypeError("ancilla must be a qubit or None")
+
     ####################################################################
     def __getitem__(self, key):
         return self._reg[key]

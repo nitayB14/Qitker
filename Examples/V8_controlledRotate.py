@@ -1,4 +1,4 @@
-"""Verify RX, RY, and RZ rotations on an individual Qitker qubit."""
+"""Demonstrate controlled RX, RY, and RZ gates with register controls."""
 
 import sys
 from pathlib import Path
@@ -17,49 +17,61 @@ from qiskit.visualization import plot_histogram
 import matplotlib.pyplot as plt
 
 
-
 def test_rotate_x():
-    """Show that RX(pi/2) produces an approximately balanced measurement."""
+    """Apply RX(pi) when all eight control qubits are one."""
     party = circuit()
-    alice = qubit(party)
 
-    # RX(pi/2) should produce approximately 50% |0> and 50% |1>.
-    alice.rotateX(math.pi / 2)
+    alice = qRegister(party, size=8)
+    marker = qubit(party)
+
+    # Set all eight controls to |1>.
+    alice.flip()
+
+    # RX(pi) acts like X up to a global phase.
+    marker.rotateXif(alice, math.pi)
 
     party.details()
     parseToQiskit(party)
+
+
+
 
 def test_rotate_y():
-    """Show that RY(pi/2) produces an approximately balanced measurement."""
+    """Apply RY(pi) when all eight control qubits are one."""
     party = circuit()
-    alice = qubit(party)
 
-    # RY(pi/2) should produce approximately 50% |0> and 50% |1>.
-    alice.rotateY(math.pi / 2)
+    alice = qRegister(party, size=8)
+    marker = qubit(party)
+
+    alice.flip()
+
+    # RY(pi) transforms |0> into |1>.
+    marker.rotateYif(alice, math.pi)
 
     party.details()
     parseToQiskit(party)
+
+
 
 def test_rotate_z():
-    """Expose an RZ phase through an H-RZ-H interference sequence."""
+    """Convert a controlled RZ(pi) phase into a measurable target bit."""
     party = circuit()
-    alice = qubit(party)
 
-    # First create a superposition so RZ changes its relative phase.
-    alice.superPosition()
-    alice.rotateZ(math.pi)
+    alice = qRegister(party, size=8)
+    marker = qubit(party)
 
-    # Convert the phase difference back into a measurable difference.
-    alice.superPosition()
+    alice.flip()
 
-    # H -> RZ(pi) -> H should produce |1>.
+    marker.superPosition()
+    marker.rotateZif(alice, math.pi)
+    marker.superPosition()
+
     party.details()
     parseToQiskit(party)
-
 
 
 def main():
-    """Run the three single-qubit rotation demonstrations."""
+    """Run all controlled-rotation demonstrations."""
 
     print("check X")
     test_rotate_x()
@@ -71,8 +83,9 @@ def main():
     test_rotate_z()
 
 
+
 def parseToQiskit(circuit):
-    """Export and simulate one rotation demonstration with Qiskit."""
+    """Export and simulate one controlled-rotation circuit."""
     #export circuit to qiskit
     qc = circuit.exportCircuit("qiskit")
 

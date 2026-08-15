@@ -47,7 +47,15 @@ def exportToQiskit(AnyonCircuit):
     """
 
     from qiskit import QuantumCircuit    
-    from qiskit.circuit.library import YGate, ZGate, SGate, TGate
+    from qiskit.circuit.library import (
+        YGate,
+        ZGate,
+        SGate,
+        TGate,
+        RXGate,
+        RYGate,
+        RZGate,
+    )
 
     qc = QuantumCircuit(AnyonCircuit.getQubitsNumber(), AnyonCircuit.getQubitsNumberToMeasure()) #creating qiskit circuit
     vector = AnyonCircuit.getOperationVector()
@@ -57,6 +65,12 @@ def exportToQiskit(AnyonCircuit):
     "Z": ZGate,
     "S": SGate,
     "T": TGate
+}
+
+    controlled_rotation_gates = {
+    "RX": RXGate,
+    "RY": RYGate,
+    "RZ": RZGate
 }
 
 
@@ -73,6 +87,14 @@ def exportToQiskit(AnyonCircuit):
                     qc.cx(controls[0], target)
                 else:
                     qc.mcx(controls, target)
+
+            elif name in controlled_rotation_gates:
+                gate = controlled_rotation_gates[name](op.getAngle())
+
+                qc.append(
+                    gate.control(len(controls)),
+                    controls + [target]
+                )
 
             elif name in controlled_gates:
                 gate = controlled_gates[name]()

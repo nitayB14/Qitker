@@ -318,6 +318,110 @@ class qubit:
     def CT(self, control):
         self.quarterPhaseIf(control)
     #################################################################
+
+    def rotateXif(self, control, angle=0, where=None):
+        control, where = self._checkItems(control, where)
+        self._controlledRotateGate(control, angle, "RX", where)
+
+    def rotateYif(self, control, angle=0, where=None):
+        control, where = self._checkItems(control, where)
+        self._controlledRotateGate(control, angle, "RY", where)
+
+    def rotateZif(self, control, angle=0, where=None):
+        control, where = self._checkItems(control, where)
+        self._controlledRotateGate(control, angle, "RZ", where)
+
+    #################################################################
+    def _controlledRotateGate(self, control, angle, oType, where=None):
+        comparison_requested = isinstance(where, (qubit, list))
+
+        controls, condition = validation.validate_controlled_gate(
+            self,
+            control,
+            where,
+            allow_comparison=True,
+        )
+
+        if comparison_requested:
+            references = condition
+
+            same_operands = all(
+                current_control is reference
+                for current_control, reference in zip(
+                    controls,
+                    references,
+                )
+            )
+
+            if same_operands:
+                if(oType == "RX"):
+                    self.rotateX(angle)
+                elif(oType == "RY"):
+                    self.rotateY(angle)
+                elif(oType == "RZ"):
+                    self.rotateZ(angle)
+                return
+
+            comparison_pairs = list(zip(controls, references))
+
+            # Compute the bitwise differences into the reference side.
+            for current_control, reference in comparison_pairs:
+                reference.cx(current_control)
+
+            # All computed differences are zero exactly when both operands
+            # represent the same computational-basis value.
+            if(oType == "RX"):
+                self._controlledRotateGate(references, angle, "RX", where=0)
+            elif(oType == "RY"):
+                    self._controlledRotateGate(references, angle, "RY", where=0)
+            elif(oType == "RZ"):
+                    self._controlledRotateGate(references, angle, "RZ", where=0)
+            
+
+            # Restore every reference qubit to its original state.
+            for current_control, reference in reversed(comparison_pairs):
+                reference.cx(current_control)
+
+            return
+
+        pattern = condition
+
+        active_controls = []
+        zero_controls = []
+
+        for current_control, state in zip(controls, pattern):
+            if state == "x":
+                continue
+
+            active_controls.append(current_control)
+
+            if state == "0":
+                zero_controls.append(current_control)
+
+        for current_control in zero_controls:
+            current_control.flip()
+
+        if active_controls:
+            if(oType == "RX"):
+                op.apply_controlled_rotate_X(self,active_controls,angle,self._quantumCircuit,)
+            elif(oType == "RY"):
+                op.apply_controlled_rotate_Y(self,active_controls,angle,self._quantumCircuit,)
+            elif(oType == "RZ"):
+                op.apply_controlled_rotate_Z(self,active_controls,angle,self._quantumCircuit,)
+                
+        else:
+            if(oType == "RX"):
+                self.rotateX(angle)
+            elif(oType == "RY"):
+                    self.rotateY(angle)
+            elif(oType == "RZ"):
+                    self.rotateZ(angle)
+
+        for current_control in reversed(zero_controls):
+            current_control.flip()
+
+
+    #################################################################
     """ Create swap by adding 3 cx """
     
     def swap(self, control):

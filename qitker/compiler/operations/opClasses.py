@@ -75,7 +75,7 @@ class controlledOpType(gateOpType):
 
 
 
-
+#######################################################################################################
 class rotateOpType(gateOpType):
     """
     The class save index of qubit and gate name
@@ -99,3 +99,31 @@ class rotateOpType(gateOpType):
     #returning string with basic information on the operation
     def __str__(self):
         return f"index: {self._target} -> {self._gateName} :: angle: {self._angle}"
+
+
+
+#######################################################################################################
+class controlledRotateOpType(rotateOpType):
+    """
+    The class save index of qubit and gate name
+    
+    Attributes:
+        - gateName: string
+            Name of quantum gate
+        - target: int
+            index of qubit
+    """
+
+    def __init__(self, gateName, target,controllers, angle=0):
+        super().__init__(gateName, target, angle)
+        self._controllers = controllers
+
+    def getControllers(self):
+        return self._controllers
+
+   
+
+    #returning string with basic information on the operation
+    def __str__(self):
+        return f"Controlled {self._gateName}  -->  Target: {self._target}, Controllers: {self._controllers}, angle: {self._angle}"
+

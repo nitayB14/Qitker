@@ -33,7 +33,7 @@ class circuit:
 
     #initialize class
     def __init__(self):
-        print("""==============================================\n        Fibonacci Anyons Quantum DSL     \n==============================================\nVersion: 1.0.0-alpha\nDate: 24/07/2026\nRule: Independent researcher""")        
+        #print("""==============================================\n        Fibonacci Anyons Quantum DSL     \n==============================================\nVersion: 1.0.0-alpha\nDate: 24/07/2026\nRule: Independent researcher""")        
         self._operationVector = np.array([])
         self._qubitsArray = []
         self._qubitsNumber = 0

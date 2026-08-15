@@ -1,8 +1,11 @@
 {
   "ExpandedNodes": [
     "",
-    "\\qitker\\compiler"
+    "\\Examples",
+    "\\qitker",
+    "\\qitker\\compiler",
+    "\\qitker\\ExportCode"
   ],
-  "SelectedNode": "\\qitker",
+  "SelectedNode": "\\qitker\\compiler\\operations",
   "PreviewInSolutionExplorer": false
 }

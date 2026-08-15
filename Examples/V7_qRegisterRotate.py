@@ -1,3 +1,5 @@
+"""Apply RX, RY, and RZ rotations to every qubit in a qRegister."""
+
 import sys
 from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parent.parent))
@@ -16,6 +18,7 @@ import matplotlib.pyplot as plt
 
 
 def main():
+    """Build an eight-qubit register rotation and interference example."""
     party = circuit()
     alice = qRegister(party, size=8)
 
@@ -36,6 +39,7 @@ def main():
 
 
 def parseToQiskit(circuit):
+    """Export the register circuit and plot its measurement counts."""
     #export circuit to qiskit
     qc = circuit.exportCircuit("qiskit")
 

@@ -1,3 +1,5 @@
+"""Implement a small Grover search with qubit-comparison conditions."""
+
 import sys
 from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parent.parent))
@@ -34,6 +36,7 @@ def diffuser(search):
 
 
 def main():
+    """Build a four-qubit Grover iteration and simulate it with Qiskit."""
 
     #creating circuit
     party = circuit()
@@ -66,6 +69,7 @@ def main():
 
 
 def parseToQiskit(circuit):
+    """Export the Grover circuit and plot its measurement distribution."""
     #export circuit to qiskit
     qc = circuit.exportCircuit("qiskit")
 

@@ -1,4 +1,4 @@
-"""Verify RX, RY, and RZ rotations on an individual Qitker qubit."""
+"""Use qRegisters as targets, controls, comparisons, and ancillas."""
 
 import sys
 from pathlib import Path
@@ -17,37 +17,21 @@ from qiskit.visualization import plot_histogram
 import matplotlib.pyplot as plt
 
 
-
-def test_rotate_x():
-    """Show that RX(pi/2) produces an approximately balanced measurement."""
+def main():
+    """Apply controlled rotations to a register through direct and ancilla paths."""
     party = circuit()
-    alice = qubit(party)
+    alice = qRegister(party, size=3)
+    q1 = qRegister(party, size=2)
+    q2 = qRegister(party, size=2)
 
-    # RX(pi/2) should produce approximately 50% |0> and 50% |1>.
-    alice.rotateX(math.pi / 2)
-
-    party.details()
-    parseToQiskit(party)
-
-def test_rotate_y():
-    """Show that RY(pi/2) produces an approximately balanced measurement."""
-    party = circuit()
-    alice = qubit(party)
-
-    # RY(pi/2) should produce approximately 50% |0> and 50% |1>.
-    alice.rotateY(math.pi / 2)
-
-    party.details()
-    parseToQiskit(party)
-
-def test_rotate_z():
-    """Expose an RZ phase through an H-RZ-H interference sequence."""
-    party = circuit()
-    alice = qubit(party)
+    marker = qubit(party)
 
     # First create a superposition so RZ changes its relative phase.
-    alice.superPosition()
-    alice.rotateZ(math.pi)
+    alice.rotateXif(q1, math.pi, where=q2)
+    alice.rotateYif(q1, math.pi, where=q2)
+    alice.rotateZif(q1, math.pi, where=q2)
+
+    alice.rotateZif(q1, math.pi, where=q2, ancilla=marker)
 
     # Convert the phase difference back into a measurable difference.
     alice.superPosition()
@@ -58,21 +42,9 @@ def test_rotate_z():
 
 
 
-def main():
-    """Run the three single-qubit rotation demonstrations."""
-
-    print("check X")
-    test_rotate_x()
-    
-    print("check Y")
-    test_rotate_y()
-
-    print("check Z")
-    test_rotate_z()
-
 
 def parseToQiskit(circuit):
-    """Export and simulate one rotation demonstration with Qiskit."""
+    """Export the register-controlled circuit and plot its results."""
     #export circuit to qiskit
     qc = circuit.exportCircuit("qiskit")
 
