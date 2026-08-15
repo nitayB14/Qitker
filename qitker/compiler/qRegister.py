@@ -80,6 +80,7 @@ class qRegister:
 
         self._size = register_size
         self._initialize = bitstring
+        self._quantumCircuit = quantumCircuit
 
         # Index zero represents the rightmost, least-significant bit.
         self._reg = [
@@ -277,7 +278,8 @@ class qRegister:
     """ Call operation class to add T gate to circuit """
     def rotateX(self, angle):
         for regQubit in self._reg:
-            op.apply_rotate_X(regQubit, angle=angle, circuit=self._quantumCircuit)
+            regQubit.rotateX(angle)
+            #op.apply_rotate_X(regQubit, angle=angle, circuit=self._quantumCircuit)
 
     def RX(self, angle):
         self.rotateX(angle)
@@ -285,7 +287,8 @@ class qRegister:
     ################################################################
     def rotateY(self, angle):
         for regQubit in self._reg:
-            op.apply_rotate_Y(regQubit, angle=angle, circuit=self._quantumCircuit)
+            regQubit.rotateY(angle)
+            #op.apply_rotate_Y(regQubit, angle=angle, circuit=self._quantumCircuit)
 
     def RY(self, angle):
         self.rotateY(angle)
@@ -293,7 +296,8 @@ class qRegister:
     ################################################################
     def rotateZ(self, angle):
         for regQubit in self._reg:
-            op.apply_rotate_Z(regQubit, angle=angle, circuit=self._quantumCircuit)
+            regQubit.rotateZ(angle)
+            #op.apply_rotate_Z(regQubit, angle=angle, circuit=self._quantumCircuit)
 
     def RZ(self, angle):
         self.rotateZ(angle)
