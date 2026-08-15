@@ -2,7 +2,6 @@
 
 from qitker.compiler.operations.opClasses import controlledRotateOpType, opType, gateOpType, controlledOpType, rotateOpType
 
-
 #####################################################################################################
 class operation:
     """
@@ -14,6 +13,10 @@ class operation:
     """
 
     ####################################################
+    def apply_barrier(self, circuit):
+        op = opType(gateName="barrier")
+        circuit.addOperation(op)
+
 
     def apply_H(self, qubit, circuit):
         """

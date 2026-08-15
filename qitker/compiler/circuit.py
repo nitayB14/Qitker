@@ -12,7 +12,8 @@ from qitker.compiler import qubit
 from qitker.parser import execution
 from qitker.compiler.reporter.reporterObject import reporterObject
 from qitker.ExportCode.exportCode import export_to
-
+from qitker.compiler.operations.operation import operation
+from qitker.compiler.operations.opClasses import opType
 
 
 class circuit:
@@ -159,6 +160,10 @@ class circuit:
         print(f"Qubits:             : {self._qubitsNumber}\n")
         print(self.getCircuitDraw())
         
+    def barrier(self):
+        operation().apply_barrier(self)
+
+
 
     def getCircuitDraw(self):
         """
@@ -184,6 +189,12 @@ class circuit:
         ]
 
         for operation in self._operationVector:
+            if operation.getName() == "barrier":
+                for qubitIndex in range(self._qubitsNumber):
+                    rows[qubitIndex] += "─@─"
+
+                continue
+
             target = operation.getTarget()
 
             # A controlled operation is identified by the additional

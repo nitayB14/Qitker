@@ -51,20 +51,28 @@ def main():
     bobGroup = qRegister(party, size=3)
     marker = qubit(party, measured=False)
 
+    
     aliceGroup.superPosition()
     bobGroup.superPosition()
 
 
+    party.barrier()
 
     marker.flip()
     marker.superPosition()
-
+    
     searchSpace = aliceGroup[:]
     searchSpace.extend(bobGroup[:])
     
+
+
+    party.barrier()
     oracle(aliceGroup, bobGroup, marker)
+    party.barrier()
     diffuser(searchSpace)
-    
+    party.barrier()
+
+
     party.details()
     parseToQiskit(party)
     

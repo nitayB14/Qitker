@@ -128,5 +128,7 @@ def exportToQiskit(AnyonCircuit):
                 qc.ry(op.getAngle(), op.getTarget())
             elif(op.getName() == "RZ"):
                 qc.rz(op.getAngle(), op.getTarget())
+            elif(op.getName() == "barrier"):
+                qc.barrier()
 
     return qc
