@@ -100,7 +100,11 @@ def exportToQiskit(AnyonCircuit):
                 qc.s(op.getTarget())
             elif(op.getName() == "T"):
                 qc.t(op.getTarget())
-            else:
-                pass
+            elif(op.getName() == "RX"):
+                qc.rx(op.getAngle(), op.getTarget())
+            elif(op.getName() == "RY"):
+                qc.ry(op.getAngle(), op.getTarget())
+            elif(op.getName() == "RZ"):
+                qc.rz(op.getAngle(), op.getTarget())
 
     return qc

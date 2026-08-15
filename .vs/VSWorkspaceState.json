@@ -1,9 +1,9 @@
 {
   "ExpandedNodes": [
     "",
-    "\\qitker",
-    "\\qitker\\compiler"
+    "\\Examples",
+    "\\qitker"
   ],
-  "SelectedNode": "\\qitker\\compiler\\qRegister.py",
+  "SelectedNode": "\\Examples\\V6_rotateQubit.py",
   "PreviewInSolutionExplorer": false
 }

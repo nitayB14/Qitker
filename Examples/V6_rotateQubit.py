@@ -2,6 +2,7 @@ import sys
 from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
+import math
 
 
 from qitker import circuit, qubit, qRegister
@@ -15,56 +16,53 @@ import matplotlib.pyplot as plt
 
 
 
-def oracle(reg1, reg2, marker):
+def test_rotate_x():
+    party = circuit()
+    alice = qubit(party)
 
-    marker.flipIf(reg1, where=reg2)
+    # RX(pi/2) should produce approximately 50% |0> and 50% |1>.
+    alice.rotateX(math.pi / 2)
 
+    party.details()
+    parseToQiskit(party)
 
+def test_rotate_y():
+    party = circuit()
+    alice = qubit(party)
 
-def diffuser(search):
-    """Grover diffuser over the four search qubits."""
+    # RY(pi/2) should produce approximately 50% |0> and 50% |1>.
+    alice.rotateY(math.pi / 2)
 
-    for current_qubit in search:
-        current_qubit.superPosition()
-        current_qubit.flip()
-    
-    # Apply a phase when all four transformed qubits are 1.
-    search[-1].phaseIf(search[:-1])
+    party.details()
+    parseToQiskit(party)
 
-    for current_qubit in search:
-        current_qubit.flip()
-        current_qubit.superPosition()
+def test_rotate_z():
+    party = circuit()
+    alice = qubit(party)
 
+    # First create a superposition so RZ changes its relative phase.
+    alice.superPosition()
+    alice.rotateZ(math.pi)
 
+    # Convert the phase difference back into a measurable difference.
+    alice.superPosition()
+
+    # H -> RZ(pi) -> H should produce |1>.
+    party.details()
+    parseToQiskit(party)
 
 
 
 def main():
 
-    #creating circuit
-    party = circuit()
-    aliceGroup = qRegister(party, size=3)
-    bobGroup = qRegister(party, size=3)
-    marker = qubit(party, measured=False)
-
-    aliceGroup.superPosition()
-    bobGroup.superPosition()
-
-
-
-    marker.flip()
-    marker.superPosition()
-
-    searchSpace = aliceGroup[:]
-    searchSpace.extend(bobGroup[:])
+    print("check X")
+    test_rotate_x()
     
-    oracle(aliceGroup, bobGroup, marker)
-    diffuser(searchSpace)
-    
-    party.details()
-    parseToQiskit(party)
-    
+    print("check Y")
+    test_rotate_y()
 
+    print("check Z")
+    test_rotate_z()
 
 
 def parseToQiskit(circuit):

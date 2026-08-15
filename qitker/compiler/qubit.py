@@ -7,7 +7,7 @@
 #
 #
 #
-from qitker.compiler import operation
+from qitker.compiler.operations import operation
 from qitker.compiler import circuit
 from qitker.compiler import validation
 
@@ -122,7 +122,33 @@ class qubit:
 
     def quarterPhase(self):
         self.T()
+    ##############################################
+    """ Call operation class to add T gate to circuit """
+    def rotateX(self, angle):
+        op.apply_rotate_X(self, angle=angle, circuit=self._quantumCircuit)
+
+    def RX(self, angle):
+        op.apply_rotate_X(self, angle=angle, circuit=self._quantumCircuit)
+
     ################################################################
+    def rotateY(self, angle):
+        op.apply_rotate_Y(self, angle=angle, circuit=self._quantumCircuit)
+
+    def RY(self, angle):
+        op.apply_rotate_Y(self, angle=angle, circuit=self._quantumCircuit)
+
+    ################################################################
+    def rotateZ(self, angle):
+        op.apply_rotate_Z(self, angle=angle, circuit=self._quantumCircuit)
+
+    def RZ(self, angle):
+        op.apply_rotate_Z(self, angle=angle, circuit=self._quantumCircuit)
+
+    ################################################################
+
+
+
+
     """ Call operation class to add controlled gate to circuit """
 
 

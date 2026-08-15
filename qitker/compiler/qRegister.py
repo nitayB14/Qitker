@@ -7,7 +7,7 @@
 #
 #
 #
-from qitker.compiler import operation
+from qitker.compiler.operations import operation
 from qitker.compiler import circuit
 from qitker.compiler.qubit import qubit
 
@@ -273,7 +273,32 @@ class qRegister:
 
 
 
+    ##############################################
+    """ Call operation class to add T gate to circuit """
+    def rotateX(self, angle):
+        for regQubit in self._reg:
+            op.apply_rotate_X(regQubit, angle=angle, circuit=self._quantumCircuit)
 
+    def RX(self, angle):
+        self.rotateX(angle)
+
+    ################################################################
+    def rotateY(self, angle):
+        for regQubit in self._reg:
+            op.apply_rotate_Y(regQubit, angle=angle, circuit=self._quantumCircuit)
+
+    def RY(self, angle):
+        self.rotateY(angle)
+
+    ################################################################
+    def rotateZ(self, angle):
+        for regQubit in self._reg:
+            op.apply_rotate_Z(regQubit, angle=angle, circuit=self._quantumCircuit)
+
+    def RZ(self, angle):
+        self.rotateZ(angle)
+
+    
     ####################################################################
     def __getitem__(self, key):
         return self._reg[key]
