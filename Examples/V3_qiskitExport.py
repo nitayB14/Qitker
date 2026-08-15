@@ -1,3 +1,5 @@
+"""Export a simple Qitker circuit and simulate it with Qiskit Aer."""
+
 import sys
 from pathlib import Path
 
@@ -15,6 +17,7 @@ from qiskit.quantum_info import Operator
 
 
 def main():
+    """Build a one-qubit circuit, export it, and plot its measurements."""
 
     #creating circuit
     party = circuit()

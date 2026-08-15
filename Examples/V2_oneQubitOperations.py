@@ -1,3 +1,5 @@
+"""Demonstrate the aliases for Qitker's basic single-qubit gates."""
+
 import sys
 from pathlib import Path
 
@@ -8,6 +10,7 @@ from qitker import circuit, qubit
 
 
 def main():
+    """Apply every basic gate alias, then execute and report the circuit."""
     #create circuit - named party
     party = circuit()
     

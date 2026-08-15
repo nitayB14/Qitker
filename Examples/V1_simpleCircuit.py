@@ -1,3 +1,5 @@
+"""Create and execute the smallest Qitker superposition example."""
+
 import sys
 from pathlib import Path
 
@@ -15,6 +17,7 @@ import matplotlib.pyplot as plt
 
 
 def main():
+    """Prepare one qubit in superposition and measure it with Qitker."""
     party = circuit()
 
     alice = qubit(party)

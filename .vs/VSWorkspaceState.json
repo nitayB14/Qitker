@@ -1,8 +1,11 @@
 {
   "ExpandedNodes": [
     "",
-    "\\Examples"
+    "\\Examples",
+    "\\qitker",
+    "\\qitker\\compiler",
+    "\\qitker\\ExportCode"
   ],
-  "SelectedNode": "\\Examples\\twoQubits.py",
+  "SelectedNode": "\\Examples\\V0_run.py",
   "PreviewInSolutionExplorer": false
 }

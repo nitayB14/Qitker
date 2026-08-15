@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 
 
 class sequenceOperation:
@@ -17,8 +18,10 @@ class sequenceOperation:
     """
 
     def __init__(self):
-        with open("qitker//parser//braid_sequences.json", "r") as f:
-            self.sequences= json.load(f)
+        json_path = Path(__file__).resolve().parent / "braid_sequences.json"
+
+        with open(json_path, "r") as f:
+            self.sequences = json.load(f)
 
     
     def getSeq(self, name):
