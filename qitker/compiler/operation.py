@@ -1,8 +1,26 @@
-from qitker.compiler import circuit
 
 
 
 class opType:
+    def __init__(self, gateName):
+        self._gateName = gateName
+    
+    def getName(self):
+        """
+        Return name of operation
+        """
+
+        return self._gateName
+    
+        #returning string with basic information on the operation
+    def __str__(self):
+        return f"operation -> {self._gateName}"
+
+
+##################################################################################
+
+
+class gateOpType(opType):
     """
     The class save index of qubit and gate name
     
@@ -14,43 +32,50 @@ class opType:
     """
 
     def __init__(self, gateName, target):
-        self.gateName = gateName
-        self.target = target
-    
-    def getName(self):
-        """
-        Return name of operation
-
-        Args:
-            - None
-
-        Returns:
-            - (string) : operation name
-        """
-
-        return self.gateName
-    
+        super().__init__(gateName)
+        self._target = target
+   
 
     def getTarget(self):
         """
         Return index of qubit we apply operation on
-
-        Args:
-            - None
-
-        Returns:
-            - (int) : qubit index
         """
 
-        return self.target
+        return self._target
 
     #returning string with basic information on the operation
     def __str__(self):
-        return f"index: {self.target} -> {self.gateName}"
+        return f"index: {self._target} -> {self._gateName}"
+#######################################################################################################
+
+class controlledOpType(gateOpType):
+    """
+    The class save index of target qubit, controlled qubits and gate name
+    
+    Attributes:
+        - gateName: string
+            Name of quantum gate
+        - target: int
+            index of qubit
+        - controlled: list 
+              list of qubits
+    """
+
+    def __init__(self, gateName, target, controllers):
+        super().__init__(gateName, target)
+        self._controllers = controllers
+
+    def getControllers(self):
+        return self._controllers
+
+    #returning string with basic information on the operation
+    def __str__(self):
+        return f"Controlled {self._gateName}  -->  Target: {self._target}, Controllers: {self._controllers}"
 
 
 
 
+#####################################################################################################
 class operation:
     """
     The class connect between the operation on qubit to the circuit vector
@@ -76,8 +101,7 @@ class operation:
             - None
         """
 
-        op = opType(gateName="H",
-                    target=circuit.getIndex(qubit))
+        op = gateOpType(gateName="H", target=circuit.getIndex(qubit))
         circuit.addOperation(op)
     ####################################################
 
@@ -95,8 +119,7 @@ class operation:
             - None
         """
 
-        op = opType(gateName="X",
-                    target=circuit.getIndex(qubit))
+        op = gateOpType(gateName="X", target=circuit.getIndex(qubit))
         circuit.addOperation(op)
     ####################################################
 
@@ -114,8 +137,7 @@ class operation:
             - None
         """
 
-        op = opType(gateName="Y",
-                    target=circuit.getIndex(qubit))
+        op = gateOpType(gateName="Y", target=circuit.getIndex(qubit))
         circuit.addOperation(op)
     ####################################################
 
@@ -133,8 +155,7 @@ class operation:
             - None
         """
 
-        op = opType(gateName="Z",
-                    target=circuit.getIndex(qubit))
+        op = gateOpType(gateName="Z", target=circuit.getIndex(qubit))
         circuit.addOperation(op)
     ####################################################
 
@@ -152,8 +173,7 @@ class operation:
             - None
         """
 
-        op = opType(gateName="S",
-                    target=circuit.getIndex(qubit))
+        op = gateOpType(gateName="S", target=circuit.getIndex(qubit))
         circuit.addOperation(op)
     ####################################################
 
@@ -171,10 +191,172 @@ class operation:
             - None
         """
 
-        op = opType(gateName="T",
-                    target=circuit.getIndex(qubit))
+        op = gateOpType(gateName="T",target=circuit.getIndex(qubit))
         circuit.addOperation(op)
     ####################################################
+    def apply_Controlled_X(self, targetQubit, controlQubits, circuit):
+        """
+        Add a controlled-X operation to operationVector.
 
+        Args:
+            - targetQubit (qubit):
+                Qubit on which X will be applied.
+            - controlQubits (qubit or list[qubit]):
+                One or more control qubits.
+            - circuit (circuit):
+                Circuit to which the operation is added.
 
+        Returns:
+            - None
+        """
 
+        if isinstance(controlQubits, list):
+            controllersIndexes = [
+                circuit.getIndex(controlQubit)
+                for controlQubit in controlQubits
+            ]
+        else:
+            controllersIndexes = [
+                circuit.getIndex(controlQubits)
+            ]
+
+        op = controlledOpType(
+            gateName="X",
+            target=circuit.getIndex(targetQubit),
+            controllers=controllersIndexes
+        )
+        circuit.addOperation(op)
+
+    ####################################################
+    def apply_Controlled_Y(self, targetQubit, controlQubits, circuit):
+        """
+        Add a controlled-Y operation to operationVector.
+
+        Args:
+            - targetQubit (qubit):
+                Qubit on which Y will be applied.
+            - controlQubits (qubit or list[qubit]):
+                One or more control qubits.
+            - circuit (circuit):
+                Circuit to which the operation is added.
+
+        Returns:
+            - None
+        """
+
+        if isinstance(controlQubits, list):
+            controllersIndexes = [
+                circuit.getIndex(controlQubit)
+                for controlQubit in controlQubits
+            ]
+        else:
+            controllersIndexes = [
+                circuit.getIndex(controlQubits)
+            ]
+
+        op = controlledOpType(
+            gateName="Y",
+            target=circuit.getIndex(targetQubit),
+            controllers=controllersIndexes
+        )
+        circuit.addOperation(op)
+
+    ####################################################
+    def apply_Controlled_Z(self, targetQubit, controlQubits, circuit):
+        """
+        Add a controlled-Z operation to operationVector.
+
+        Args:
+            - targetQubit (qubit):
+                Qubit on which Z will be applied.
+            - controlQubits (qubit or list[qubit]):
+                One or more control qubits.
+            - circuit (circuit):
+                Circuit to which the operation is added.
+
+        Returns:
+            - None
+        """
+
+        if isinstance(controlQubits, list):
+            controllersIndexes = [
+                circuit.getIndex(controlQubit)
+                for controlQubit in controlQubits
+            ]
+        else:
+            controllersIndexes = [
+                circuit.getIndex(controlQubits)
+            ]
+
+        op = controlledOpType(
+            gateName="Z",
+            target=circuit.getIndex(targetQubit),
+            controllers=controllersIndexes
+        )
+        circuit.addOperation(op)
+
+    def apply_Controlled_S(self, targetQubit, controlQubits, circuit):
+        """
+        Add a controlled-S operation to operationVector.
+
+        Args:
+            - targetQubit (qubit):
+                Qubit on which S will be applied.
+            - controlQubits (qubit or list[qubit]):
+                One or more control qubits.
+            - circuit (circuit):
+                Circuit to which the operation is added.
+
+        Returns:
+            - None
+        """
+
+        if isinstance(controlQubits, list):
+            controllersIndexes = [
+                circuit.getIndex(controlQubit)
+                for controlQubit in controlQubits
+            ]
+        else:
+            controllersIndexes = [
+                circuit.getIndex(controlQubits)
+            ]
+
+        op = controlledOpType(
+            gateName="S",
+            target=circuit.getIndex(targetQubit),
+            controllers=controllersIndexes
+        )
+        circuit.addOperation(op)
+
+    def apply_Controlled_T(self, targetQubit, controlQubits, circuit):
+        """
+        Add a controlled-T operation to operationVector.
+
+        Args:
+            - targetQubit (qubit):
+                Qubit on which T will be applied.
+            - controlQubits (qubit or list[qubit]):
+                One or more control qubits.
+            - circuit (circuit):
+                Circuit to which the operation is added.
+
+        Returns:
+            - None
+        """
+
+        if isinstance(controlQubits, list):
+            controllersIndexes = [
+                circuit.getIndex(controlQubit)
+                for controlQubit in controlQubits
+            ]
+        else:
+            controllersIndexes = [
+                circuit.getIndex(controlQubits)
+            ]
+
+        op = controlledOpType(
+            gateName="T",
+            target=circuit.getIndex(targetQubit),
+            controllers=controllersIndexes
+        )
+        circuit.addOperation(op)

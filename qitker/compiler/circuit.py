@@ -160,36 +160,83 @@ class circuit:
         print(self.getCircuitDraw())
         
 
-    def getCircuitDraw(self): 
+    def getCircuitDraw(self):
         """
-        Returning draw of circuit
-
-        Args:
-            - self (circuit):
-
-        Returns:
-            - (string) draw of circuit
+        Return a text representation of the circuit.
         """
 
-        s = ""
-        for i in range(self._qubitsNumber):
-            if (self._qubitsArray[i].isToMeasure()):
-                s += (f"q[{i}]:  ")
+        if self._qubitsNumber == 0:
+            return ""
+
+        labels = []
+
+        for index, currentQubit in enumerate(self._qubitsArray):
+            if currentQubit.isToMeasure():
+                labels.append(f"q[{index}]: ")
             else:
-                s += (f"A[{i}]:  ")
-            
-            for j in self._operationVector:
-                s += f"--"                  
-                if j.getTarget() == i:
-                    s += j.getName()
-                else:
-                    s += "-"
+                labels.append(f"A[{index}]: ")
+
+        labelWidth = max(len(label) for label in labels)
+
+        rows = [
+            label.ljust(labelWidth) + "─"
+            for label in labels
+        ]
+
+        for operation in self._operationVector:
+            target = operation.getTarget()
+
+            # A controlled operation is identified by the additional
+            # interface supplied by controlledOpType.
+            if hasattr(operation, "getControllers"):
+                controllers = operation.getControllers()
+                targetGate = operation.getName()
+
+                involvedQubits = controllers + [target]
+
+                firstInvolved = min(involvedQubits)
+                lastInvolved = max(involvedQubits)
+
+                cellWidth = max(3, len(targetGate) + 2)
+
+                for qubitIndex in range(self._qubitsNumber):
+                    if qubitIndex in controllers:
+                        symbol = "●"
+
+                    elif qubitIndex == target:
+                        symbol = targetGate
+
+                    elif firstInvolved < qubitIndex < lastInvolved:
+                        symbol = "│"
+
+                    else:
+                        symbol = None
+
+                    if symbol is None:
+                        rows[qubitIndex] += "─" * cellWidth
+                    else:
+                        rows[qubitIndex] += symbol.center(
+                            cellWidth,
+                            "─"
+                        )
+                # Regular single-qubit operation.
+            else:
+                gateName = operation.getName()
+                cellWidth = max(3, len(gateName) + 2)
+
+                for qubitIndex in range(self._qubitsNumber):
+                    if qubitIndex == target:
+                        rows[qubitIndex] += gateName.center(
+                            cellWidth,
+                            "─"
+                        )
+                    else:
+                        rows[qubitIndex] += "─" * cellWidth
+        return "\n".join(rows)
 
 
-            s += f"--"              
-            s += "\n"
-        
-        return s    
+
+
 
     def execute(self):
         """
@@ -350,3 +397,6 @@ class circuit:
             y += f"{j}\n"
 
         return f"number of qubits: {self._qubitsNumber}\n{y}"
+
+    def __repr__(self):
+        return self.__str__()

@@ -1,9 +1,9 @@
 {
   "ExpandedNodes": [
     "",
-    "\\Examples",
-    "\\qitker\\parser"
+    "\\qitker",
+    "\\qitker\\compiler"
   ],
-  "SelectedNode": "\\Examples\\qiskitExport.py",
+  "SelectedNode": "\\qitker\\compiler\\qRegister.py",
   "PreviewInSolutionExplorer": false
 }
