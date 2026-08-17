@@ -2,10 +2,11 @@
   "ExpandedNodes": [
     "",
     "\\Examples",
-    "\\qitker",
     "\\qitker\\compiler",
-    "\\qitker\\ExportCode"
+    "\\qitker\\compiler\\reporter",
+    "\\version_testing",
+    "\\version_testing\\Frontend"
   ],
-  "SelectedNode": "\\Examples\\V0_run.py",
+  "SelectedNode": "\\version_testing\\Frontend",
   "PreviewInSolutionExplorer": false
 }

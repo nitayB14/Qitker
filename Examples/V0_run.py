@@ -17,26 +17,6 @@ import matplotlib.pyplot as plt
 
 
 
-def oracle(reg1, reg2, marker):
-    """Phase-mark states in which both registers contain the same value."""
-
-    marker.flipIf(reg1, where=reg2)
-
-
-
-def diffuser(search):
-    """Grover diffuser over the four search qubits."""
-
-    for current_qubit in search:
-        current_qubit.superPosition()
-        current_qubit.flip()
-    
-    # Apply a phase when all four transformed qubits are 1.
-    search[-1].phaseIf(search[:-1])
-
-    for current_qubit in search:
-        current_qubit.flip()
-        current_qubit.superPosition()
 
 
 
@@ -47,33 +27,20 @@ def main():
 
     #creating circuit
     party = circuit()
-    aliceGroup = qRegister(party, size=3)
-    bobGroup = qRegister(party, size=3)
-    marker = qubit(party, measured=False)
-
+    reg1 = qRegister(party, initialize="01000001")
     
-    aliceGroup.superPosition()
-    bobGroup.superPosition()
+    for i in reg1[0:5]:
+        i.x()
 
 
-    party.barrier()
 
-    marker.flip()
-    marker.superPosition()
-    
-    searchSpace = aliceGroup[:]
-    searchSpace.extend(bobGroup[:])
-    
-
-
-    party.barrier()
-    oracle(aliceGroup, bobGroup, marker)
-    party.barrier()
-    diffuser(searchSpace)
-    party.barrier()
 
 
     party.details()
+    
+    result = party.measure()
+    print(result.getPercentage())
+
     parseToQiskit(party)
     
 
@@ -100,10 +67,11 @@ def parseToQiskit(circuit):
     #get result
     result = job.result()
     counts = result.get_counts()
+    """
     counts = {
         bitstring[::-1]: count
         for bitstring, count in counts.items()
-    }
+    }"""
     
     plot_histogram(counts)
     #draw circuit

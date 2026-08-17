@@ -320,25 +320,6 @@ class circuit:
         
         return obj
 
-        """
-        print(f"ss:   {self.ex.measure(shots)}")
-        if debug: #in debug mode the function print matrix and anyon move 
-            print("[Debug]\n----------------------------------------------")
-            circuitReporter.printAnyonMove(self.ex.getMoveList())
-            circuitReporter.printFinalMatrix(self.ex)
-        
-        compilation = "\n[Compilation]\n----------------------------------------------\n"
-        compilation += circuitReporter.getTotalGates(self)
-        compilation += circuitReporter.getTotalBraids(self.ex)
-        compilation += f"Shots number:       : {shots}\n"
-        compilation += circuitReporter.getFidelity(self.ex)
-
-
-        resultsReport = "\n[Results]\n----------------------------------------------\n"
-        resultsReport += circuitReporter.getPercentage(self.ex.measure(shots))
-        
-        return compilation, resultsReport
-        """         
 
 
 
