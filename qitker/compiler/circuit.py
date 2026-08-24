@@ -262,33 +262,15 @@ class circuit:
         if len(self._qubitsArray) == 0:
             raise TypeError("cannot execute algorithm without qubits")
 
-        if len(self._operationVector) == 0:
-            raise TypeError("cannot execute algorithm without gates")
+        #if len(self._operationVector) == 0:
+        #    raise TypeError("cannot execute algorithm without gates")
         
         self._ex = execution.execution(self)
         self._ex.convert()
 
 
-    def getAnyonMove(self, anyonMoveList):
-        """
-        Printing how anyons move 
 
-        Args:
-            - anyonMoveList (List):
-                list of anyon places
-
-        Returns:
-            - None
-        """
-        anyonMove = ""
-        for i in anyonMoveList:
-            for vecId, operation in enumerate(i):
-                anyonMove += (f"[{vecId:05d}]:    {operation}\n")
-
-        return anyonMove
-
-
-    def measure(self, shots=1024, debug=False):
+    def measure(self, shots=1024):
         """
         Responsible to measure circuit and create details as strings
 

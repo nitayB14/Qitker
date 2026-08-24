@@ -23,19 +23,3 @@ class AnyonOperation:
     def __repr__(self):
         return self.__str__()
 
-"""
-# יצירת פעולת R
-    r_operation = AnyonOperation(
-        operation_type="R",
-        first_id=1,
-        second_id=2
-    )
-
-    # יצירת פעולת F הפוכה
-    f_operation = AnyonOperation(
-        operation_type="F",
-        inverse=True,
-        path=(0,),
-        direction="left"
-    )
-"""

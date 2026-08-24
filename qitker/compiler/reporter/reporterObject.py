@@ -80,7 +80,7 @@ class reporterObject():
 		reportStr = ""
 
 		if debug:
-			reportStr += "[Debug]\n----------------------------------------------\n\n"
+			reportStr += "\n[Debug]\n----------------------------------------------\n"
 			reportStr += str(self._anyonMove)
 			reportStr += f"\nFinal matrix:\n{self._finalMatrix}\n"
 

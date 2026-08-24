@@ -237,67 +237,8 @@ class FusionSystem:
     def addOperationToIdealMatrix(self, operation):
         self.hilbertSpace.add_ideal_operation(operation.getName(), operation.getTarget())
 
-    """
-    def sigma(self, qubit_id: int, index: int):
-        if not 0 <= qubit_id < len(self.qubits):
-            raise IndexError("Invalid qubit_id.")
+   
 
-        if index not in {-3, -2, -1, 1, 2, 3}:
-            raise ValueError("index must be ±1, ±2 or ±3.")
-
-        qubit = self.qubits[qubit_id]
-        ids = [anyon.get_id() for anyon in qubit.anyons]
-
-        inverse = index < 0
-        sigma_index = abs(index)
-
-        if sigma_index == 1:
-            first_id, second_id = ids[0], ids[1]
-            move = self.tree.undoRMove if inverse else self.tree.RMove
-            move(first_id, second_id)
-
-
-        elif sigma_index == 2:
-            anyon_path = self.tree.find_path(ids[0])
-            qubit_path = anyon_path[:-2]
-
-            qubit_subtree = self.tree.get_node_at_path(qubit_path)
-
-            current_ids = [
-                anyon.get_id()
-                for anyon in self.tree.flatten(qubit_subtree)
-            ]
-
-            first_id, second_id = current_ids[1], current_ids[2]
-
-            self._sigma2(
-                qubit_path,
-                first_id,
-                second_id,
-                inverse
-            )
-
-        else:  # sigma_index == 3
-            first_id, second_id = ids[2], ids[3]
-            move = self.tree.undoRMove if inverse else self.tree.RMove
-            move(first_id, second_id)
-
-
-        self.operation_history.append(
-            AnyonOperation(
-                operation_type="R",
-                inverse=inverse,
-                qubit_id=qubit_id,
-                sigma_index=sigma_index,
-                structure=self.tree.to_ids()
-            )
-        )
-
-        self.hilbertSpace.sigma(
-            qubit_id=qubit_id,
-            index=index
-        )
-    """
     def sigma(self, qubit_id: int, index: int):
         if not 0 <= qubit_id < len(self.qubits):
             raise IndexError("Invalid qubit_id.")

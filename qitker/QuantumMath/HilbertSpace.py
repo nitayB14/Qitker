@@ -37,24 +37,13 @@ class HilbertSpace:
 
     def _get_sigma_matrix(self, index: int) -> np.ndarray:
 
-        sigma_matrices = {
-            1: fibonacciConst.R12,
-            -1: fibonacciConst.R12_inv,
-
-            2: fibonacciConst.R23,
-            -2: fibonacciConst.R23_inv,
-
-            3: fibonacciConst.R34,
-            -3: fibonacciConst.R34_inv,
-        }
-
-        if index not in sigma_matrices:
+        if index not in fibonacciConst.SIGMA_MATRICES:
             raise ValueError(
                 "sigma index must be one of: "
                 "1, -1, 2, -2, 3, -3."
             )
 
-        return sigma_matrices[index]
+        return fibonacciConst.SIGMA_MATRICES[index]
 
     def _expand_single_qubit_operator(self,operator: np.ndarray,qubit_id: int) -> np.ndarray:
 
@@ -177,24 +166,16 @@ class HilbertSpace:
         if not isinstance(gate_name, str):
             raise TypeError("gate_name must be a string.")
 
-        gate_matrices = {
-            "I": fibonacciConst.I,
-            "H": fibonacciConst.H,
-            "X": fibonacciConst.X,
-            "Y": fibonacciConst.Y,
-            "Z": fibonacciConst.Z,
-            "S": fibonacciConst.S,
-            "T": fibonacciConst.T,
-        }
+
 
         gate_name = gate_name.upper()
 
-        if gate_name not in gate_matrices:
+        if gate_name not in fibonacciConst.GATE_MATRICES:
             raise ValueError(
                 f"Unsupported gate: {gate_name}"
             )
 
-        return gate_matrices[gate_name]
+        return fibonacciConst.GATE_MATRICES[gate_name]
 
 
     def gate_fidelity(self):
@@ -245,62 +226,3 @@ class HilbertSpace:
     def __repr__(self):
         return self.__str__()
 
-
-
-    
-    """
-    def sigma(self, num, state):
-        
-        Applies the requested braid operation (σ₁, σ₂, σ₃ or their inverses)
-        to the given quantum state.
-
-        Parameters:
-            num (int): Braid index.
-            state (np.ndarray): Quantum state vector.
-
-        Returns:
-            np.ndarray: Updated quantum state.
-        
-
-        if num == 1:
-            state = self.apply_R12(state)
-        elif num == 2:
-            state = self.apply_R23(state)
-        elif num == 3:
-            state = self.apply_R34(state)
-        elif num == -1:
-            state = self.apply_reverseR12(state)
-        elif num == -2:
-            state = self.apply_reverseR23(state)
-        elif num == -3:
-            state = self.apply_reverseR34(state)
-        else:
-            raise ValueError("bad input")
-        return state
-    """
-
-
-    """
-    def getMatrix(self, op):
-        
-        Returns the reference matrix for a given quantum gate.
-
-        Parameters:
-            op (str): Gate name ("H", "X", "Y", "Z", "S", or "T").
-
-        Returns:
-            np.ndarray: Corresponding 2×2 quantum gate matrix.
-        
-        if op == "H":
-            return fibonacciConst.H
-        elif op == "X":
-            return fibonacciConst.X
-        elif op == "Y":
-            return fibonacciConst.Y
-        elif op == "Z":
-            return fibonacciConst.Z
-        elif op == "S":
-            return fibonacciConst.S
-        elif op == "T":
-            return fibonacciConst.T
-        """

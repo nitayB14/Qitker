@@ -19,29 +19,24 @@ import matplotlib.pyplot as plt
 
 
 
-
-
-
 def main():
-    """Build, display, export, and simulate the register-search example."""
+    """Build, display, export, and simulate"""
 
     #creating circuit
     party = circuit()
-    reg1 = qRegister(party, initialize="01000001")
-    
-    for i in reg1[0:5]:
-        i.x()
+    alice = qubit(party)
 
 
+    alice.mix()
 
+
+    result = party.measure(1024)
 
 
     party.details()
-    
-    result = party.measure()
-    print(result.getPercentage())
+    print(result.report(True))
 
-    parseToQiskit(party)
+    #parseToQiskit(party)
     
 
 
@@ -67,11 +62,11 @@ def parseToQiskit(circuit):
     #get result
     result = job.result()
     counts = result.get_counts()
-    """
+    
     counts = {
         bitstring[::-1]: count
         for bitstring, count in counts.items()
-    }"""
+    }
     
     plot_histogram(counts)
     #draw circuit

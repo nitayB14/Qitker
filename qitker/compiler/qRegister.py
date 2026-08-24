@@ -125,6 +125,9 @@ class qRegister:
 
     def superPosition(self):
         self.H()
+
+    def mix(self):
+        self.H()
     ##############################################
     """ Call every qubit in the register and apply X gate """
     def X(self):
@@ -312,6 +315,14 @@ class qRegister:
     def rotateZif(self,control, angle, where=None, ancilla=None):
         self._controlledRotateGate(control, angle, "RZ", where, ancilla)
     
+    ########################################################################
+    def rotate(self, gateName, angle):
+        pass
+
+    def rotateIf(self, gateName, control, angle, where=None, ancilla=None):
+        pass
+
+    #########################################################################
 
     def _controlledRotateGate(self, control, angle, opType, where=None, ancilla=None):
         if isinstance(ancilla, qubit):

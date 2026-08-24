@@ -1,12 +1,9 @@
 {
   "ExpandedNodes": [
     "",
-    "\\Examples",
-    "\\qitker\\compiler",
-    "\\qitker\\compiler\\reporter",
-    "\\version_testing",
-    "\\version_testing\\Frontend"
+    "\\qitker",
+    "\\qitker\\compiler"
   ],
-  "SelectedNode": "\\version_testing\\Frontend",
+  "SelectedNode": "\\qitker\\compiler\\qubit.py",
   "PreviewInSolutionExplorer": false
 }
