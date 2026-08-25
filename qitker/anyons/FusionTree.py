@@ -33,16 +33,6 @@ class FusionTree:
 
 
 
-    def get_anyon(self, anyon_id):
-        """
-        Returns the anyon object matching the given ID
-        """
-        stractureFlat = self.flatten()
-
-        for anyon in stractureFlat:
-            if anyon_id == anyon.get_id():
-                return anyon
-        return None
     #############################################################
 
 
@@ -190,11 +180,11 @@ class FusionTree:
 
     def _swap_siblings(self, first_id, second_id):
         if not self.is_siblings(first_id, second_id):
-            """
+            
             raise ValueError(
                 f"Anyons {first_id} and {second_id} "
                 "are not direct siblings."
-            )"""
+            )
 
         first_path = self.find_path(first_id)
         parent_path = first_path[:-1]

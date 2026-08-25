@@ -25,11 +25,10 @@ def main():
     #creating circuit
     party = circuit()
     alice = qubit(party)
-
-
+    bob = qubit(party)
+    josh = qubit(party)
     alice.mix()
-
-
+    josh.flip()
     result = party.measure(1024)
 
 

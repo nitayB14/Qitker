@@ -2,8 +2,9 @@
   "ExpandedNodes": [
     "",
     "\\qitker",
-    "\\qitker\\compiler"
+    "\\qitker\\anyons",
+    "\\version_testing"
   ],
-  "SelectedNode": "\\qitker\\compiler\\qubit.py",
+  "SelectedNode": "\\qitker\\anyons\\Anyon.py",
   "PreviewInSolutionExplorer": false
 }

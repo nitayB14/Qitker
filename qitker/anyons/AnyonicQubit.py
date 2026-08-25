@@ -36,6 +36,9 @@ class AnyonicQubit:
     def get_right_pair(self):
         return self.anyons[2], self.anyons[3]
 
+    def get_id_list(self):
+        return [i.get_id() for i in self.anyons]
+
     #return information about the logical anyon qubit
     def __repr__(self):
         return (

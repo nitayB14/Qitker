@@ -249,10 +249,7 @@ class FusionSystem:
         inverse = index < 0
         sigma_index = abs(index)
 
-        ids = [
-            anyon.get_id()
-            for anyon in self.qubits[qubit_id].anyons
-        ]
+        ids = self.get_qubit(qubit_id).get_id_list()
 
         # find subtree of qubit
         anyon_path = self.tree.find_path(ids[0])
@@ -287,17 +284,16 @@ class FusionSystem:
             move = self.tree.undoRMove if inverse else self.tree.RMove
             move(first_id, second_id)
 
-        self.operation_history.append(
-            AnyonOperation(
-                operation_type="R",
+        self.record_operation(AnyonOperation(
+                operation_type="SIGMA",
                 inverse=inverse,
                 qubit_id=qubit_id,
                 sigma_index=sigma_index,
                 first_id=first_id,
                 second_id=second_id,
                 structure=self.tree.to_ids()
-            )
-        )
+            ))
+
 
         self.hilbertSpace.sigma(
             qubit_id=qubit_id,
@@ -314,9 +310,9 @@ class FusionSystem:
         move = self.tree.undoRMove if inverse else self.tree.RMove
         move(first_id, second_id)
 
-        self.tree.FMove(inner_path, "right")
+        self.tree.undoFMove(inner_path, "left")
 
-        self.tree.FMove(qubit_path, "left")   
+        self.tree.undoFMove(qubit_path, "right")   
 
     
     def __str__(self):
