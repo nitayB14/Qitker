@@ -21,26 +21,26 @@ class reporterObject():
             Distribution of results
     """
 
-	def __init__(self, anyonMove, finalMatrix, totalGates, totalBraids,
-			  shotsNumber, fidelity, percentage):
+	def __init__(self, anyonMove, totalGates, totalBraids,
+			  shotsNumber, fidelity, percentage, finalStateVector):
 
 		self._anyonMove = anyonMove
-		self._finalMatrix = finalMatrix
 		self._totalGates = totalGates
 		self._totalBraids = totalBraids
 		self._shotsNumber = shotsNumber
 		self._fidelity = fidelity
 		self._percentage = percentage
+		self._finalStateVector = finalStateVector
 
 
 	def getAnyonMove(self):
 		return self._anyonMove
 
-	def getFinalMatrix(self):
-		return self._finalMatrix
-
 	def getTotalGates(self):
 		return self._totalGates
+
+	def getFinalStateVector(self):
+		return self._finalStateVector
 
 	def getTotalBraids(self):
 		return self._totalBraids
@@ -82,7 +82,8 @@ class reporterObject():
 		if debug:
 			reportStr += "\n[Debug]\n----------------------------------------------\n"
 			reportStr += str(self._anyonMove)
-			reportStr += f"\nFinal matrix:\n{self._finalMatrix}\n"
+			reportStr += str(f"\nFinal state vector: \n{self._finalStateVector}\n")
+
 
 		reportStr += "\n[Compilation]\n----------------------------------------------\n"
 		reportStr += "Total gates:        : " + str(self._totalGates) + '\n'

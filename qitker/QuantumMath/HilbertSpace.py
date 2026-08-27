@@ -20,11 +20,9 @@ class HilbertSpace:
         self.state_vector = np.zeros(self.dimension, dtype=complex)
         self.state_vector[0] = 1
 
-        # Accumulated unitary
-        self.unitary = np.eye(self.dimension, dtype=complex)
+        self.local_braid_operators = [fibonacciConst.I.copy() for _ in range(qubits_num)]
+        self.local_ideal_operators = [fibonacciConst.I.copy() for _ in range(qubits_num)]
 
-        # Ideal gate/unitary (filled later by the compiler/execution)
-        self.ideal_unitary = np.eye(self.dimension,dtype=complex)
         self.ideal_operations = []
 
 
@@ -44,33 +42,39 @@ class HilbertSpace:
             )
 
         return fibonacciConst.SIGMA_MATRICES[index]
+    #########################################################
+    def _apply_single_qubit_operator(self,operator: np.ndarray,qubit_id: int) -> None:
+        if not isinstance(operator, np.ndarray):
+            raise TypeError("operator must be a NumPy array.")
 
-    def _expand_single_qubit_operator(self,operator: np.ndarray,qubit_id: int) -> np.ndarray:
+        if operator.shape != (2, 2):
+            raise ValueError("operator must have shape (2, 2).")
 
         if not isinstance(qubit_id, int):
             raise TypeError("qubit_id must be an integer.")
 
         if qubit_id < 0 or qubit_id >= self.qubits_num:
-            raise ValueError(
-                f"Qubit {qubit_id} does not exist."
-            )
+            raise ValueError(f"Qubit {qubit_id} does not exist.")
 
-        global_operator = np.array([[1]], dtype=complex)
+        stride = 2 ** (self.qubits_num - qubit_id - 1)
+        blocks = self.state_vector.reshape(-1, 2, stride)
 
-        for current_qubit in range(self.qubits_num):
+        zero_amplitudes = blocks[:, 0, :].copy()
+        one_amplitudes = blocks[:, 1, :].copy()
 
-            current_operator = (
-                operator
-                if current_qubit == qubit_id
-                else fibonacciConst.I
-            )
+        blocks[:, 0, :] = (
+            operator[0, 0] * zero_amplitudes
+            + operator[0, 1] * one_amplitudes
+        )
+        blocks[:, 1, :] = (
+            operator[1, 0] * zero_amplitudes
+            + operator[1, 1] * one_amplitudes
+        )
 
-            global_operator = np.kron(
-                global_operator,
-                current_operator
-            )
+        self.state_vector = blocks.reshape(self.dimension)
 
-        return global_operator
+
+
 
     def sigma(self, qubit_id: int, index: int):
         if not isinstance(index, int):
@@ -78,20 +82,9 @@ class HilbertSpace:
 
         local_operator = self._get_sigma_matrix(index)
 
-        global_operator = self._expand_single_qubit_operator(
-            operator=local_operator,
-            qubit_id=qubit_id
-        )
+        self._apply_single_qubit_operator(operator=local_operator, qubit_id=qubit_id)
 
-        self.state_vector = (
-            global_operator @ self.state_vector
-        )
-
-        if self.unitary is not None:
-            self.unitary = (
-                global_operator @ self.unitary
-            )
-
+        self.local_braid_operators[qubit_id] = (local_operator @ self.local_braid_operators[qubit_id])
 
     def probs(self):
         """
@@ -143,24 +136,26 @@ class HilbertSpace:
 
         return results
 
+    
+    def add_ideal_operation(self, gate_name: str, qubit_id: int) -> None:
 
-    def add_ideal_operation(self, gate_name: str, qubit_id: int):
+        if not isinstance(qubit_id, int):
+            raise TypeError("qubit_id must be an integer.")
+
+        if qubit_id < 0 or qubit_id >= self.qubits_num:
+            raise ValueError(
+                f"Qubit {qubit_id} does not exist."
+            )
+
         local_gate = self._get_gate_matrix(gate_name)
-
-        global_gate = self._expand_single_qubit_operator(
-            operator=local_gate,
-            qubit_id=qubit_id
-        )
+        self.local_ideal_operators[qubit_id] = (local_gate @ self.local_ideal_operators[qubit_id])
 
         self.ideal_operations.append({
             "gate": gate_name,
             "target": qubit_id
         })
 
-        self.ideal_unitary = (
-            global_gate @ self.ideal_unitary
-        )
-
+    
 
     def _get_gate_matrix(self, gate_name: str) -> np.ndarray:
         if not isinstance(gate_name, str):
@@ -178,37 +173,29 @@ class HilbertSpace:
         return fibonacciConst.GATE_MATRICES[gate_name]
 
 
-    def gate_fidelity(self):
-        """
-        Computes the fidelity between the current implemented
-        unitary and the ideal unitary.
-        """
+    def gate_fidelity(self) -> float:
+        fidelity = 1.0
 
-        if self.ideal_unitary is None:
-            raise ValueError(
-                "ideal_unitary has not been initialized."
-            )
+        for ideal_operator, braid_operator in zip(
+            self.local_ideal_operators,
+            self.local_braid_operators
+        ):
+            local_overlap = abs(
+                np.trace(
+                    ideal_operator.conj().T
+                    @ braid_operator
+                )
+            ) / 2
 
-        d = self.unitary.shape[0]
+            fidelity *= local_overlap
 
-        return abs(
-            np.trace(
-                self.ideal_unitary.conj().T @ self.unitary
-            )
-        ) / d
+        return float(fidelity)
     
     
     def get_state_vector(self):
         #Returns the current quantum state.
         return self.state_vector
 
-    def get_unitary(self):
-        #Returns the braid unitary.
-        return self.unitary
-
-    def get_ideal_unitary(self):
-        #Returns the target unitary corresponding to the logical circuit.
-        return self.ideal_unitary
 
     def __str__(self):
         return (
@@ -216,9 +203,6 @@ class HilbertSpace:
             f"    qubits = {self.qubits_num},\n"
             f"    dimension = {self.dimension},\n"
             f"    state_vector_shape = {self.state_vector.shape},\n"
-            f"    unitary_shape = {self.unitary.shape},\n"
-            f"    ideal_unitary = "
-            f"{None if self.ideal_unitary is None else self.ideal_unitary.shape}\n"
             f")"
         )
 

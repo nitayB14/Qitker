@@ -293,12 +293,12 @@ class circuit:
         
 
         obj = reporterObject(self._ex._fusionSystem.get_operation_history(),
-                             self._ex._fusionSystem.hilbertSpace.get_unitary(),
                              len(self._operationVector),
                              self._ex._braidsNumber,
                              shots,
                              self._ex.getFidelity(),
-                             filteredOutput)
+                             filteredOutput,
+                             self._ex._fusionSystem.hilbertSpace.get_state_vector())
         
         return obj
 
