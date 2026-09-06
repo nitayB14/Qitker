@@ -1,14 +1,28 @@
+import numpy as np
+
 from qitker.anyons.Anyon import Anyon, Charge
 from qitker.anyons.AnyonicQubit import AnyonicQubit
 from qitker.anyons.FusionTree import FusionTree
 from qitker.anyons.AnyonOperation import AnyonOperation
 from qitker.QuantumMath.HilbertSpace import HilbertSpace
+from qitker.anyons.FusionBasis import FusionBasis
 
 
 class FusionSystem:
     """
     Represents a global system of Fibonacci anyonic qubits.
+
+    Braiding convention:
+        An anyon ID represents a permanent physical identity.
+
+        The position of an anyon is determined by its current
+        position in the flattened FusionTree.
+
+        An R-move exchanges the positions of two sibling anyons
+        while preserving their IDs.
     """
+
+    BRAID_CONVENTION = "MOVING_ANYON_IDENTITIES"
 
     def __init__(self, qubits_num: int):
 
@@ -18,7 +32,7 @@ class FusionSystem:
         if qubits_num < 1:
             raise ValueError("qubits_num must be at least 1.")
 
-        if qubits_num > 16:
+        if qubits_num > 8:
             raise ValueError("Number too big for simulation")
 
         self.qubits_num = qubits_num
@@ -36,7 +50,9 @@ class FusionSystem:
             total_charge=Charge.VACUUM
         )
 
-        self.hilbertSpace = HilbertSpace(self.qubits_num)
+        self.basis = FusionBasis(tree=self.tree, qubits=self.qubits, total_charge=Charge.VACUUM)
+
+        self.hilbertSpace = HilbertSpace(self.basis)
 
     def get_qubit(self, qubit_id):
         """
@@ -51,6 +67,14 @@ class FusionSystem:
 
         return self.qubits[qubit_id]
 
+
+    def get_current_anyon_order(self) -> tuple[int, ...]:
+        """
+        Return anyon IDs in their current physical tree order.
+        """
+
+        return tuple(anyon.get_id()for anyon in self.tree.flatten())
+
     def get_anyon(self, anyon_id):
         """
         Returns the Anyon with the given ID.
@@ -63,6 +87,79 @@ class FusionSystem:
             raise ValueError(f"Anyon {anyon_id} does not exist.")
 
         return self.anyons[anyon_id - 1]
+
+    def get_anyon_at_position(self, position: int) -> Anyon:
+        """
+        Return the anyon currently located at a one-based position.
+        """
+
+        if isinstance(position, bool) or not isinstance(position, int):
+            raise TypeError(
+                "position must be an integer."
+            )
+
+        anyons = self.tree.flatten()
+
+        if position < 1 or position > len(anyons):
+            raise ValueError(
+                f"position must be between 1 and {len(anyons)}."
+            )
+
+        return anyons[position - 1]
+
+    def get_current_qubit_block(self,qubit_id: int,) -> tuple[Anyon, ...]:
+        """
+        Return the four anyons currently occupying a logical-qubit block.
+        """
+
+        if isinstance(qubit_id, bool) or not isinstance(qubit_id, int):
+            raise TypeError(
+                "qubit_id must be an integer."
+            )
+
+        if qubit_id < 0 or qubit_id >= self.qubits_num:
+            raise ValueError(
+                f"Qubit {qubit_id} does not exist."
+            )
+
+        anyons = self.tree.flatten()
+
+        start = 4 * qubit_id
+        end = start + 4
+
+        return tuple(anyons[start:end])
+
+    def _capture_state_snapshot(self) -> dict:
+        """
+        Capture the state required to roll back an atomic operation.
+        """
+
+        return {
+            "tree_structure": self.tree.structure,
+            "basis": self.basis,
+            "hilbert_basis": self.hilbertSpace.basis,
+            "state_vector": (
+                self.hilbertSpace.state_vector.copy()
+            ),
+            "dimension": self.hilbertSpace.dimension,
+        }
+    def _restore_state_snapshot(self, snapshot: dict,) -> None:
+        """
+        Restore tree, basis, and HilbertSpace after a failed operation.
+        """
+
+        self.tree.structure = snapshot["tree_structure"]
+        self.basis = snapshot["basis"]
+
+        self.hilbertSpace.basis = snapshot[
+            "hilbert_basis"
+        ]
+        self.hilbertSpace.state_vector = snapshot[
+            "state_vector"
+        ]
+        self.hilbertSpace.dimension = snapshot[
+            "dimension"
+        ]
 
     def get_qubit_of_anyon(self, anyon_id):
         """
@@ -131,11 +228,7 @@ class FusionSystem:
         anyons_num = self.qubits_num * 4
 
         for anyon_id in range(1, anyons_num + 1):
-            charge = (
-                Charge.VACUUM
-                if anyon_id % 4 == 1
-                else Charge.TAU
-            )
+            charge = (Charge.TAU)
 
             self.anyons.append(
                 Anyon(
@@ -237,7 +330,196 @@ class FusionSystem:
     def addOperationToIdealMatrix(self, operation):
         self.hilbertSpace.add_ideal_operation(operation.getName(), operation.getTarget())
 
-   
+    def _commit_basis_state(self, new_basis: FusionBasis, new_state_vector,) -> None:
+        """
+        Atomically install a validated basis and statevector.
+        """
+
+        if not isinstance(new_basis, FusionBasis):
+            raise TypeError(
+                "new_basis must be a FusionBasis object."
+            )
+
+        if not isinstance(new_state_vector, np.ndarray):
+            raise TypeError(
+                "new_state_vector must be a NumPy array."
+            )
+
+        expected_shape = (
+            len(new_basis.states),
+        )
+
+        if new_state_vector.shape != expected_shape:
+            raise ValueError(
+                "Statevector shape does not match "
+                "the new fusion basis."
+            )
+
+        if new_basis.tree_signature != self.tree.to_ids():
+            raise ValueError(
+                "New FusionBasis does not describe "
+                "the current FusionTree."
+            )
+
+        self.basis = new_basis
+
+        self.hilbertSpace.basis = new_basis
+        self.hilbertSpace.dimension = len(
+            new_basis.states
+        )
+        self.hilbertSpace.state_vector = (
+            new_state_vector.copy()
+        )
+
+
+
+    def _apply_position_swap(self, first_id: int, second_id: int, inverse: bool = False,) -> dict:
+        """
+        Atomically swap sibling positions and rebuild the basis.
+
+        This helper does not apply quantum R phases yet.
+        """
+
+        snapshot = self._capture_state_snapshot()
+        tree_before = self.tree.to_ids()
+
+        try:
+            if inverse:
+                self.tree.undoRMove(
+                    first_id,
+                    second_id,
+                )
+            else:
+                self.tree.RMove(
+                    first_id,
+                    second_id,
+                )
+
+            new_basis = FusionBasis(
+                tree=self.tree,
+                qubits=self.qubits,
+                total_charge=Charge.VACUUM,
+            )
+
+            new_state_vector = (
+                self.hilbertSpace.state_vector_in_basis(
+                    new_basis
+                )
+            )
+
+            self._commit_basis_state(
+                new_basis,
+                new_state_vector,
+            )
+
+        except Exception:
+            self._restore_state_snapshot(snapshot)
+            raise
+
+        return {
+            "type": "POSITION_SWAP",
+            "inverse": inverse,
+            "first_id": first_id,
+            "second_id": second_id,
+            "tree_before": tree_before,
+            "tree_after": self.tree.to_ids(),
+        }
+
+    def _apply_r_move(self, first_id: int, second_id: int, inverse: bool = False,) -> dict:
+        """
+        Atomically apply a quantum R-move to sibling anyons.
+        """
+
+        if not isinstance(inverse, bool):
+            raise TypeError(
+                "inverse must be a boolean."
+            )
+
+        snapshot = self._capture_state_snapshot()
+        tree_before = self.tree.to_ids()
+        norm_before = np.linalg.norm(
+            self.hilbertSpace.state_vector
+        )
+
+        try:
+            if not self.tree.is_siblings(
+                first_id,
+                second_id,
+            ):
+                raise ValueError(
+                    f"Anyons {first_id} and {second_id} "
+                    "are not direct siblings."
+                )
+
+            first_path = self.tree.find_path(first_id)
+            second_path = self.tree.find_path(second_id)
+
+            parent_path = first_path[:-1]
+
+            if second_path[:-1] != parent_path:
+                raise ValueError(
+                    "The anyons do not share the same parent."
+                )
+
+            phased_state_vector = (
+                self.hilbertSpace.state_vector_after_r(
+                    parent_path=parent_path,
+                    inverse=inverse,
+                )
+            )
+
+            if inverse:
+                self.tree.undoRMove(
+                    first_id,
+                    second_id,
+                )
+            else:
+                self.tree.RMove(
+                    first_id,
+                    second_id,
+                )
+
+            new_basis = FusionBasis(
+                tree=self.tree,
+                qubits=self.qubits,
+                total_charge=Charge.VACUUM,
+            )
+
+            new_state_vector = (
+                self.hilbertSpace.state_vector_in_basis(
+                    new_basis,
+                    state_vector=phased_state_vector,
+                )
+            )
+
+            norm_after = np.linalg.norm(
+                new_state_vector
+            )
+
+            if not np.isclose(norm_before, norm_after):
+                raise RuntimeError(
+                    "R-move did not preserve statevector norm."
+                )
+
+            self._commit_basis_state(
+                new_basis,
+                new_state_vector,
+            )
+
+        except Exception:
+            self._restore_state_snapshot(snapshot)
+            raise
+
+        return {
+            "type": "R",
+            "inverse": inverse,
+            "first_id": first_id,
+            "second_id": second_id,
+            "parent_path": parent_path,
+            "tree_before": tree_before,
+            "tree_after": self.tree.to_ids(),
+        }
+
 
     def sigma(self, qubit_id: int, index: int):
         if not 0 <= qubit_id < len(self.qubits):
@@ -313,6 +595,7 @@ class FusionSystem:
         self.tree.undoFMove(inner_path, "left")
 
         self.tree.undoFMove(qubit_path, "right")   
+
 
     
     def __str__(self):

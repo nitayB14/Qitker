@@ -4,6 +4,34 @@ class Charge(Enum):
     VACUUM = "1"
     TAU = "τ"
 
+
+def fusion_outcomes(
+    left_charge: Charge,
+    right_charge: Charge,
+) -> tuple[Charge, ...]:
+    """Return the allowed outcomes of fusing two Fibonacci charges."""
+
+    if not isinstance(left_charge, Charge):
+        raise TypeError(
+            "left_charge must be a Charge value."
+        )
+
+    if not isinstance(right_charge, Charge):
+        raise TypeError(
+            "right_charge must be a Charge value."
+        )
+
+    if left_charge is Charge.VACUUM:
+        return (right_charge,)
+
+    if right_charge is Charge.VACUUM:
+        return (left_charge,)
+
+    return (
+        Charge.VACUUM,
+        Charge.TAU,
+    )
+
 class Anyon:
     
     VALID_CHARGES = {Charge.TAU, Charge.VACUUM}

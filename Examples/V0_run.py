@@ -8,70 +8,23 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from qitker import circuit, qubit, qRegister
 
+def main():    
+    runCircuit()
 
 
-from qiskit_aer import Aer
-from qiskit import *
-from qiskit.visualization import plot_histogram
-import matplotlib.pyplot as plt
+    
 
-
-
-
-
-def main():
-    """Build, display, export, and simulate"""
-
-    #creating circuit
+def runCircuit():
     party = circuit()
-    alice = qubit(party)
-    bob = qRegister(party, size=3)
-
-    alice.mix()
-    bob.mix()
-
-    result = party.measure(1024)
-
-
-    party.details()
-    print(result.report(True))
-
-    #parseToQiskit(party)
     
-
-
-
-def parseToQiskit(circuit):
-    """Export a Qitker circuit to Qiskit and plot measurement counts."""
-    #export circuit to qiskit
-    qc = circuit.exportCircuit("qiskit")
-
-    """qiskit operations on circuit"""
-    qc.draw('mpl')
-
-    x,y = circuit.getMeasuredLists()
-
-    qc.measure(x, y)
-
-    simulation = Aer.get_backend('qasm_simulator')
-    transpiled_qc = transpile(qc, simulation)
+    q1 = qubit(party)
     
-    #run the simulation
-    job = simulation.run(transpiled_qc, shots=2048)
-
-    #get result
-    result = job.result()
-    counts = result.get_counts()
+    q1.mix()
     
-    counts = {
-        bitstring[::-1]: count
-        for bitstring, count in counts.items()
-    }
+    result = party.measure()
     
-    plot_histogram(counts)
-    #draw circuit
-    #qc.draw('mpl')
-    plt.show() 
+    print(party.getCircuitDraw())
+    print(result)
 
 
 
