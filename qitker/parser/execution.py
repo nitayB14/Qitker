@@ -124,7 +124,14 @@ class execution:
 
         return self._fusionSystem.hilbertSpace.run_measurements(shots=shots)
     
+    def getLeakageProbability(self):
+        probability = (
+            self._fusionSystem
+            .hilbertSpace
+            .leakage_probability()
+        )
 
+        return probability
             
     #returning string with basic information on the execution
     def __repr__(self):

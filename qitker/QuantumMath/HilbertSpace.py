@@ -33,49 +33,6 @@ class HilbertSpace:
 
 
 
-    #########################################################
-
-    def _get_sigma_matrix(self, index: int) -> np.ndarray:
-
-        if index not in fibonacciConst.SIGMA_MATRICES:
-            raise ValueError(
-                "sigma index must be one of: "
-                "1, -1, 2, -2, 3, -3."
-            )
-
-        return fibonacciConst.SIGMA_MATRICES[index]
-    #########################################################
-    def _apply_single_qubit_operator(self,operator: np.ndarray,qubit_id: int) -> None:
-        if not isinstance(operator, np.ndarray):
-            raise TypeError("operator must be a NumPy array.")
-
-        if operator.shape != (2, 2):
-            raise ValueError("operator must have shape (2, 2).")
-
-        if not isinstance(qubit_id, int):
-            raise TypeError("qubit_id must be an integer.")
-
-        if qubit_id < 0 or qubit_id >= self.qubits_num:
-            raise ValueError(f"Qubit {qubit_id} does not exist.")
-
-        stride = 2 ** (self.qubits_num - qubit_id - 1)
-        blocks = self.state_vector.reshape(-1, 2, stride)
-
-        zero_amplitudes = blocks[:, 0, :].copy()
-        one_amplitudes = blocks[:, 1, :].copy()
-
-        blocks[:, 0, :] = (
-            operator[0, 0] * zero_amplitudes
-            + operator[0, 1] * one_amplitudes
-        )
-        blocks[:, 1, :] = (
-            operator[1, 0] * zero_amplitudes
-            + operator[1, 1] * one_amplitudes
-        )
-
-        self.state_vector = blocks.reshape(self.dimension)
-
-
     def state_vector_in_basis(self, new_basis: FusionBasis, state_vector: np.ndarray | None = None,) -> np.ndarray:
         """
         Return the current statevector reindexed into new_basis.
@@ -110,15 +67,7 @@ class HilbertSpace:
 
         return new_state_vector
 
-    def sigma(self, qubit_id: int, index: int):
-        if not isinstance(index, int):
-            raise TypeError("sigma index must be an integer.")
 
-        local_operator = self._get_sigma_matrix(index)
-
-        self._apply_single_qubit_operator(operator=local_operator, qubit_id=qubit_id)
-
-        self.local_braid_operators[qubit_id] = (local_operator @ self.local_braid_operators[qubit_id])
 
     def probs(self):
         """
@@ -131,10 +80,22 @@ class HilbertSpace:
         return probabilities / probabilities.sum()
     
     def computational_probability(self) -> float:
+        if not self.basis.classify_logical:
+            raise RuntimeError(
+                "Computational probability is unavailable "
+                "in a temporary physical fusion basis."
+            )
+
         probabilities = self.probs()
         return float(probabilities[self.basis.computational_indices].sum())
     
     def leakage_probability(self) -> float:
+        if not self.basis.classify_logical:
+            raise RuntimeError(
+                "Leakage probability is unavailable in a "
+                "temporary physical fusion basis."
+            )
+
         probabilities = self.probs()
         return float(probabilities[self.basis.leakage_indices].sum())
     
@@ -244,6 +205,26 @@ class HilbertSpace:
         #Returns the current quantum state.
         return self.state_vector
 
+    def record_local_braid(self, qubit_id: int, index: int,) -> None:
+        if isinstance(qubit_id, bool) or not isinstance(qubit_id, int,):
+            raise TypeError("qubit_id must be an integer.")
+
+        if qubit_id < 0 or qubit_id >= self.qubits_num:
+            raise ValueError(f"Qubit {qubit_id} does not exist.")
+        
+        if isinstance(index, bool) or not isinstance(index, int):
+            raise TypeError("index must be an integer.")
+
+        if index not in fibonacciConst.SIGMA_MATRICES:
+            raise ValueError("Unsupported local sigma index.")
+
+        operator = fibonacciConst.SIGMA_MATRICES[index]
+
+        self.local_braid_operators[qubit_id] = (
+            operator
+            @ self.local_braid_operators[qubit_id]
+        )
+
     def state_vector_after_r(self, parent_path: tuple, inverse: bool = False,) -> np.ndarray:
         """
         Return the statevector after applying an R-symbol
@@ -291,6 +272,135 @@ class HilbertSpace:
             new_state_vector[index] = (
                 phase * self.state_vector[index]
             )
+
+        return new_state_vector
+
+    def state_vector_after_f(
+        self,
+        new_basis: FusionBasis,
+        old_intermediate_cluster: frozenset,
+        new_intermediate_cluster: frozenset,
+        direction: str,
+    ) -> np.ndarray:
+        """Return the statevector transformed into an F-related basis."""
+
+        if not isinstance(new_basis, FusionBasis):
+            raise TypeError(
+                "new_basis must be a FusionBasis object."
+            )
+
+        if direction not in {"left", "right"}:
+            raise ValueError(
+                "direction must be 'left' or 'right'."
+            )
+
+        if not isinstance(old_intermediate_cluster, frozenset):
+            raise TypeError(
+                "old_intermediate_cluster must be a frozenset."
+            )
+
+        if not isinstance(new_intermediate_cluster, frozenset):
+            raise TypeError(
+                "new_intermediate_cluster must be a frozenset."
+            )
+
+        def spectator_key(cluster_labels, excluded_cluster):
+            items = [
+                (tuple(sorted(cluster)), charge)
+                for cluster, charge in cluster_labels.items()
+                if cluster != excluded_cluster
+            ]
+            return tuple(sorted(items, key=lambda item: item[0]))
+
+        def build_groups(basis, excluded_cluster):
+            groups = {}
+
+            for index, state in enumerate(basis.states):
+                cluster_labels = basis.get_cluster_labels(state)
+
+                if excluded_cluster not in cluster_labels:
+                    raise ValueError(
+                        "Intermediate fusion channel is missing."
+                    )
+
+                channel = cluster_labels[excluded_cluster]
+                key = spectator_key(
+                    cluster_labels,
+                    excluded_cluster,
+                )
+                channel_map = groups.setdefault(key, {})
+
+                if channel in channel_map:
+                    raise ValueError(
+                        "Duplicate fusion channel in an F-move group."
+                    )
+
+                channel_map[channel] = index
+
+            return groups
+
+        old_groups = build_groups(
+            self.basis,
+            old_intermediate_cluster,
+        )
+        new_groups = build_groups(
+            new_basis,
+            new_intermediate_cluster,
+        )
+
+        if set(old_groups) != set(new_groups):
+            raise ValueError(
+                "Old and new F-move spectator sectors do not match."
+            )
+
+        new_state_vector = np.zeros(
+            len(new_basis.states),
+            dtype=complex,
+        )
+        channel_order = (
+            Charge.VACUUM,
+            Charge.TAU,
+        )
+        matrix = (
+            fibonacciConst.F
+            if direction == "right"
+            else fibonacciConst.F_inv
+        )
+
+        for key, old_channels in old_groups.items():
+            new_channels = new_groups[key]
+
+            if len(old_channels) != len(new_channels):
+                raise ValueError(
+                    "F-move sector dimensions do not match."
+                )
+
+            if len(old_channels) == 1:
+                old_index = next(iter(old_channels.values()))
+                new_index = next(iter(new_channels.values()))
+                new_state_vector[new_index] = (
+                    self.state_vector[old_index]
+                )
+                continue
+
+            if (
+                set(old_channels) != set(channel_order)
+                or set(new_channels) != set(channel_order)
+            ):
+                raise ValueError(
+                    "Unsupported multi-channel F-move sector."
+                )
+
+            old_local_vector = np.array([
+                self.state_vector[old_channels[channel]]
+                for channel in channel_order
+            ], dtype=complex)
+            new_local_vector = matrix @ old_local_vector
+
+            for row, channel in enumerate(channel_order):
+                new_state_vector[
+                    new_channels[channel]
+                ] = new_local_vector[row]
 
         return new_state_vector
 

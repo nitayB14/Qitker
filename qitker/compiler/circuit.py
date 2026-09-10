@@ -298,7 +298,8 @@ class circuit:
                              shots,
                              self._ex.getFidelity(),
                              filteredOutput,
-                             self._ex._fusionSystem.hilbertSpace.get_state_vector())
+                             self._ex._fusionSystem.hilbertSpace.get_state_vector(),
+                             self._ex.getLeakageProbability())
         
         return obj
 

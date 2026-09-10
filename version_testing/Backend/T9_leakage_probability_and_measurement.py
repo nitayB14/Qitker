@@ -1,3 +1,5 @@
+"""Section 9: computational probability, leakage, and measurement tests."""
+
 import sys
 from pathlib import Path
 
@@ -11,6 +13,7 @@ from qitker.anyons.FusionSystem import FusionSystem
 
 
 def test_initial_state_probabilities():
+    """Check that the initialized state is entirely computational."""
     fusion_system = FusionSystem(2)
     space = fusion_system.hilbertSpace
 
@@ -34,6 +37,7 @@ def test_initial_state_probabilities():
 
 
 def test_full_leakage_state():
+    """Check probabilities for a state placed fully in the leakage sector."""
     fusion_system = FusionSystem(2)
     space = fusion_system.hilbertSpace
 
@@ -71,6 +75,7 @@ def test_full_leakage_state():
 
 
 def test_mixed_computational_and_leakage_state():
+    """Check probability sums for a normalized mixed physical state."""
     fusion_system = FusionSystem(2)
     space = fusion_system.hilbertSpace
 
@@ -125,6 +130,7 @@ def test_mixed_computational_and_leakage_state():
 
 
 def test_computational_measurement_decoding():
+    """Check physical-to-logical decoding and the LEAKAGE marker."""
     fusion_system = FusionSystem(2)
     space = fusion_system.hilbertSpace
     basis = fusion_system.basis
@@ -144,6 +150,7 @@ def test_computational_measurement_decoding():
 
 
 def test_deterministic_logical_measurement():
+    """Check repeated measurement of a deterministic logical state."""
     fusion_system = FusionSystem(2)
     space = fusion_system.hilbertSpace
 
@@ -176,6 +183,7 @@ def test_deterministic_logical_measurement():
 
 
 def main():
+    """Run all section 9 leakage and measurement checks."""
     test_initial_state_probabilities()
     test_full_leakage_state()
     test_mixed_computational_and_leakage_state()

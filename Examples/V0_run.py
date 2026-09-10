@@ -17,14 +17,20 @@ def main():
 def runCircuit():
     party = circuit()
     
-    q1 = qubit(party)
-    
-    q1.mix()
+    #q1 = qubit(party)
+    q2 = qRegister(party, size=2)
+
+
+    q2.h()
+    #2.phase()
+    #q2.quarterPhase()
+
+    #q1.mix()
     
     result = party.measure()
     
     print(party.getCircuitDraw())
-    print(result)
+    print(result.report(True))
 
 
 

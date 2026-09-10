@@ -2,11 +2,10 @@
   "ExpandedNodes": [
     "",
     "\\qitker",
-    "\\qitker\\anyons",
-    "\\qitker\\QuantumMath",
+    "\\qitker\\compiler\\reporter",
     "\\version_testing",
     "\\version_testing\\Backend"
   ],
-  "SelectedNode": "\\version_testing\\Backend\\T8_quantum_r_move.py",
+  "SelectedNode": "\\version_testing\\Backend\\T18_cross_qubit_sigma.py",
   "PreviewInSolutionExplorer": false
 }

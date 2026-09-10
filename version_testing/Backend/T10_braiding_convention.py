@@ -1,3 +1,5 @@
+"""Section 10: moving-anyon identity convention and basis reindexing."""
+
 import sys
 from pathlib import Path
 import numpy as np
@@ -12,6 +14,7 @@ from qitker.anyons.FusionBasis import FusionBasis
 
 
 def assert_raises(expected_exception, function):
+    """Verify that calling function raises the expected exception."""
     try:
         function()
     except expected_exception:
@@ -23,6 +26,7 @@ def assert_raises(expected_exception, function):
 
 
 def block_ids(fusion_system, qubit_id):
+    """Return IDs currently occupying a positional four-anyon block."""
     return tuple(
         anyon.get_id()
         for anyon in fusion_system.get_current_qubit_block(
@@ -32,6 +36,7 @@ def block_ids(fusion_system, qubit_id):
 
 
 def test_initial_position_metadata():
+    """Check the initial identity order and qubit-block positions."""
     fusion_system = FusionSystem(2)
 
     assert (
@@ -53,6 +58,7 @@ def test_initial_position_metadata():
 
 
 def test_position_validation():
+    """Check validation of one-based anyon-position access."""
     fusion_system = FusionSystem(2)
 
     assert_raises(
@@ -91,12 +97,13 @@ def test_position_validation():
 
 
 def test_identity_moves_between_positions():
+    """Check that R moves identities while preserving permanent IDs."""
     fusion_system = FusionSystem(2)
 
     anyon_3 = fusion_system.get_anyon(3)
     anyon_4 = fusion_system.get_anyon(4)
 
-    fusion_system.tree.RMove(3, 4)
+    fusion_system.tree._swap_siblings(3, 4)
 
     assert fusion_system.get_current_anyon_order() == (
         1, 2, 4, 3, 5, 6, 7, 8,
@@ -121,11 +128,12 @@ def test_identity_moves_between_positions():
 
 
 def test_inverse_restores_positions():
+    """Check that the inverse position swap restores the initial order."""
     fusion_system = FusionSystem(2)
     initial_order = fusion_system.get_current_anyon_order()
 
-    fusion_system.tree.RMove(3, 4)
-    fusion_system.tree.undoRMove(3, 4)
+    fusion_system.tree._swap_siblings(3, 4)
+    fusion_system.tree._swap_siblings(3, 4)
 
     assert fusion_system.get_current_anyon_order() == initial_order
     assert block_ids(fusion_system, 0) == (1, 2, 3, 4)
@@ -133,9 +141,10 @@ def test_inverse_restores_positions():
 
 
 def test_basis_uses_current_qubit_blocks():
+    """Check that basis metadata follows current positional qubit blocks."""
     fusion_system = FusionSystem(2)
 
-    fusion_system.tree.RMove(3, 4)
+    fusion_system.tree._swap_siblings(3, 4)
 
     moved_basis = FusionBasis(
         tree=fusion_system.tree,
@@ -182,6 +191,7 @@ def test_basis_uses_current_qubit_blocks():
     assert q1_ids == (5, 6, 7, 8)
 
 def test_basis_reindexing_after_position_swap():
+    """Check state reindexing between bases with swapped sibling leaves."""
     fusion_system = FusionSystem(2)
 
     old_basis = fusion_system.basis
@@ -194,7 +204,7 @@ def test_basis_reindexing_after_position_swap():
         old_state_vector.copy()
     )
 
-    fusion_system.tree.RMove(3, 4)
+    fusion_system.tree._swap_siblings(3, 4)
 
     new_basis = FusionBasis(
         tree=fusion_system.tree,
@@ -231,6 +241,7 @@ def test_basis_reindexing_after_position_swap():
 
 
 def test_basis_reindexing_preserves_norm():
+    """Check that pure reindexing leaves the statevector norm unchanged."""
     fusion_system = FusionSystem(2)
 
     normalized_state = np.arange(
@@ -244,7 +255,7 @@ def test_basis_reindexing_preserves_norm():
         normalized_state.copy()
     )
 
-    fusion_system.tree.RMove(3, 4)
+    fusion_system.tree._swap_siblings(3, 4)
 
     new_basis = FusionBasis(
         tree=fusion_system.tree,
@@ -270,6 +281,7 @@ def test_basis_reindexing_preserves_norm():
 
 
 def test_basis_reindexing_validation():
+    """Check rejection of incompatible basis reindexing requests."""
     fusion_system = FusionSystem(2)
     one_qubit_system = FusionSystem(1)
 
@@ -286,119 +298,8 @@ def test_basis_reindexing_validation():
     )
 
 
-def test_atomic_position_swap():
-    fusion_system = FusionSystem(2)
-
-    old_basis = fusion_system.basis
-    old_state = (
-        fusion_system.hilbertSpace.state_vector.copy()
-    )
-
-    step = fusion_system._apply_position_swap(3, 4)
-
-    assert fusion_system.tree.to_ids() == (
-        ((1, 2), (4, 3)),
-        ((5, 6), (7, 8)),
-    )
-    assert fusion_system.basis is not old_basis
-    assert (
-        fusion_system.hilbertSpace.basis
-        is fusion_system.basis
-    )
-    assert np.isclose(
-        np.linalg.norm(
-            fusion_system.hilbertSpace.state_vector
-        ),
-        np.linalg.norm(old_state),
-    )
-    assert step["type"] == "POSITION_SWAP"
-    assert step["tree_before"] != step["tree_after"]
-    assert fusion_system.operation_history == []
-
-
-def test_atomic_inverse_position_swap():
-    fusion_system = FusionSystem(2)
-    initial_tree = fusion_system.tree.to_ids()
-    initial_state = (
-        fusion_system.hilbertSpace.state_vector.copy()
-    )
-
-    fusion_system._apply_position_swap(3, 4)
-    fusion_system._apply_position_swap(
-        3,
-        4,
-        inverse=True,
-    )
-
-    assert fusion_system.tree.to_ids() == initial_tree
-    assert fusion_system.basis.tree_signature == initial_tree
-    assert (
-        fusion_system.hilbertSpace.basis
-        is fusion_system.basis
-    )
-    assert np.array_equal(
-        fusion_system.hilbertSpace.state_vector,
-        initial_state,
-    )
-    assert fusion_system.operation_history == []
-
-
-def test_failed_position_swap_rolls_back():
-    fusion_system = FusionSystem(2)
-
-    tree_before = fusion_system.tree.to_ids()
-    basis_before = fusion_system.basis
-    state_before = (
-        fusion_system.hilbertSpace.state_vector.copy()
-    )
-
-    assert_raises(
-        ValueError,
-        lambda: fusion_system._apply_position_swap(4, 5),
-    )
-
-    assert fusion_system.tree.to_ids() == tree_before
-    assert fusion_system.basis is basis_before
-    assert fusion_system.hilbertSpace.basis is basis_before
-    assert np.array_equal(
-        fusion_system.hilbertSpace.state_vector,
-        state_before,
-    )
-    assert fusion_system.operation_history == []
-
-
-def test_post_swap_failure_rolls_back():
-    fusion_system = FusionSystem(2)
-
-    tree_before = fusion_system.tree.to_ids()
-    basis_before = fusion_system.basis
-    state_before = (
-        fusion_system.hilbertSpace.state_vector.copy()
-    )
-
-    def fail_after_tree_change(new_basis):
-        raise RuntimeError("Forced reindexing failure.")
-
-    fusion_system.hilbertSpace.state_vector_in_basis = (
-        fail_after_tree_change
-    )
-
-    assert_raises(
-        RuntimeError,
-        lambda: fusion_system._apply_position_swap(3, 4),
-    )
-
-    assert fusion_system.tree.to_ids() == tree_before
-    assert fusion_system.basis is basis_before
-    assert fusion_system.hilbertSpace.basis is basis_before
-    assert np.array_equal(
-        fusion_system.hilbertSpace.state_vector,
-        state_before,
-    )
-    assert fusion_system.operation_history == []
-
-
 def test_commit_validation_and_copy():
+    """Check commit input validation and defensive statevector copying."""
     fusion_system = FusionSystem(1)
 
     assert_raises(
@@ -443,6 +344,7 @@ def test_commit_validation_and_copy():
 
 
 def main():
+    """Run all section 10 braiding-convention checks."""
     test_initial_position_metadata()
     print("Initial position metadata: PASS")
 
@@ -467,22 +369,10 @@ def main():
     test_basis_reindexing_validation()
     print("Reindexing validation: PASS")
 
-    test_atomic_position_swap()
-    print("Atomic position swap: PASS")
-
-    test_atomic_inverse_position_swap()
-    print("Atomic inverse position swap: PASS")
-
-    test_failed_position_swap_rolls_back()
-    print("Invalid swap rollback: PASS")
-
-    test_post_swap_failure_rolls_back()
-    print("Post-swap rollback: PASS")
-
     test_commit_validation_and_copy()
     print("Commit validation and copy: PASS")
 
-    print("All sections 10.1-10.4 convention tests passed.")
+    print("All section 10 braiding-convention tests passed.")
 
 
 if __name__ == "__main__":

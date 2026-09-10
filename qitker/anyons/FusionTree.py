@@ -168,16 +168,6 @@ class FusionTree:
         return self.get_node_at_path(parent_path)
 
 
-
-
-    def RMove(self, first_id, second_id):
-        self._swap_siblings(first_id, second_id)
-
-
-    def undoRMove(self, first_id, second_id):
-        self._swap_siblings(first_id, second_id)
-
-
     def _swap_siblings(self, first_id, second_id):
         if not self.is_siblings(first_id, second_id):
             
@@ -314,18 +304,6 @@ class FusionTree:
             c
         )
 
-    def undoFMove(self, path, direction):
-        """
-        Reverses an F-move previously applied in the given direction.
-        """
-
-        inverse_direction = (
-            "left"
-            if direction == "right"
-            else "right"
-        )
-
-        self.FMove(path, inverse_direction)
 
 
 

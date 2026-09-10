@@ -1,3 +1,5 @@
+"""Section 11: quantum R-symbol application and inverse tests."""
+
 import sys
 from pathlib import Path
 
@@ -13,6 +15,7 @@ from qitker.anyons.FusionSystem import FusionSystem
 
 
 def assert_raises(expected_exception, function):
+    """Verify that calling function raises the expected exception."""
     try:
         function()
     except expected_exception:
@@ -28,6 +31,7 @@ def basis_index_for_parent_charge(
     parent_path,
     charge,
 ):
+    """Find a basis index with the requested sibling-parent channel."""
     return next(
         index
         for index, state in enumerate(
@@ -38,6 +42,7 @@ def basis_index_for_parent_charge(
 
 
 def test_r_symbol_constants():
+    """Check the Fibonacci R symbols and their diagonal matrix."""
     assert np.isclose(
         math_constant.R_VACUUM,
         np.exp(-4j * np.pi / 5),
@@ -56,6 +61,7 @@ def test_r_symbol_constants():
 
 
 def test_r_phase_for_channel(charge, expected_phase):
+    """Check the forward R phase for one fusion channel."""
     fusion_system = FusionSystem(1)
     parent_path = fusion_system.basis.qubit_paths[0][
         "left_pair"
@@ -94,6 +100,7 @@ def test_inverse_r_phase_for_channel(
     charge,
     expected_phase,
 ):
+    """Check that inverse R uses the conjugate channel phase."""
     fusion_system = FusionSystem(1)
     parent_path = fusion_system.basis.qubit_paths[0][
         "left_pair"
@@ -128,6 +135,7 @@ def test_inverse_r_phase_for_channel(
 
 
 def test_r_preserves_norm_in_physical_space():
+    """Check that R is norm preserving in the 13-dimensional space."""
     fusion_system = FusionSystem(2)
     dimension = len(fusion_system.basis.states)
 
@@ -164,6 +172,7 @@ def test_r_preserves_norm_in_physical_space():
 
 
 def test_r_then_inverse_restores_system():
+    """Check that R followed by inverse R restores tree and state."""
     fusion_system = FusionSystem(2)
     dimension = len(fusion_system.basis.states)
 
@@ -200,6 +209,7 @@ def test_r_then_inverse_restores_system():
 
 
 def test_invalid_r_move_rolls_back():
+    """Check rollback when R is requested for non-sibling anyons."""
     fusion_system = FusionSystem(2)
     tree_before = fusion_system.tree.to_ids()
     basis_before = fusion_system.basis
@@ -223,6 +233,7 @@ def test_invalid_r_move_rolls_back():
 
 
 def test_r_input_validation():
+    """Check validation of R paths, channels, and inverse flags."""
     fusion_system = FusionSystem(1)
     parent_path = fusion_system.basis.qubit_paths[0][
         "left_pair"
@@ -258,6 +269,7 @@ def test_r_input_validation():
 
 
 def main():
+    """Run all section 11 quantum R-move checks."""
     test_r_symbol_constants()
     print("R-symbol constants: PASS")
 

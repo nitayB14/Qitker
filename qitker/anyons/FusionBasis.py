@@ -31,15 +31,27 @@ class FusionBasis:
             Maps a computational physical index back to its bitstring.
     """
 
-    def __init__(self, tree: FusionTree, qubits: list[AnyonicQubit], total_charge: Charge = Charge.VACUUM,):
+    def __init__(
+        self,
+        tree: FusionTree,
+        qubits: list[AnyonicQubit],
+        total_charge: Charge = Charge.VACUUM,
+        classify_logical: bool = True,
+    ):
         """Initialize the containers for a basis tied to 'tree' ."""
         self._validate_inputs(tree, qubits, total_charge)
+
+        if not isinstance(classify_logical, bool):
+            raise TypeError(
+                "classify_logical must be a boolean."
+            )
 
         # Objects that define which physical fusion space this basis describes.
         self._tree = tree
         self._qubits = qubits
         self.qubits_num = len(self._qubits)
         self._total_charge = total_charge
+        self.classify_logical = classify_logical
 
         # Snapshot and path metadata for the current tree topology.
         self.tree_signature = tree.to_ids()
@@ -57,7 +69,8 @@ class FusionBasis:
         self.logical_to_physical = {}
         self.physical_to_logical = {}
 
-        self._build_qubit_paths()
+        if self.classify_logical:
+            self._build_qubit_paths()
 
         all_states = self._enumerate_subtree(
             self._tree.structure
@@ -75,7 +88,8 @@ class FusionBasis:
                 "Fusion basis contains duplicate states."
             )
 
-        self._classify_states()
+        if self.classify_logical:
+            self._classify_states()
 
 
 
@@ -289,6 +303,66 @@ class FusionBasis:
             )
 
         return tuple(reindex_map)
+
+
+    def get_charge_at_path(
+        self,
+        state: dict,
+        path: tuple,
+    ) -> Charge:
+        """Return the charge of a leaf or internal node at path."""
+
+        if not isinstance(state, dict):
+            raise TypeError("state must be a dictionary.")
+
+        if not isinstance(path, tuple):
+            raise TypeError("path must be a tuple.")
+
+        node = self._tree.get_node_at_path(path)
+
+        if node is None:
+            raise ValueError("path does not exist in the fusion tree.")
+
+        if isinstance(node, tuple):
+            if path not in state["labels"]:
+                raise ValueError(
+                    "state does not contain the internal-node label."
+                )
+
+            return state["labels"][path]
+
+        return node.get_charge()
+
+
+    def get_cluster_labels(self, state: dict) -> dict:
+        """Map each internal leaf-ID cluster to its fusion charge."""
+
+        if not isinstance(state, dict):
+            raise TypeError("state must be a dictionary.")
+
+        if "labels" not in state:
+            raise ValueError("state must contain labels.")
+
+        cluster_labels = {}
+
+        def visit(node, path):
+            if not isinstance(node, tuple):
+                return frozenset((node,))
+
+            left_ids = visit(node[0], path + (0,))
+            right_ids = visit(node[1], path + (1,))
+            cluster = left_ids | right_ids
+
+            if path not in state["labels"]:
+                raise ValueError(
+                    "state does not contain all tree labels."
+                )
+
+            cluster_labels[cluster] = state["labels"][path]
+            return cluster
+
+        visit(self.tree_signature, ())
+        return cluster_labels
 
 
     @staticmethod

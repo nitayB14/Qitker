@@ -1,3 +1,5 @@
+"""Section 8: physical Hilbert-space initialization and dimension tests."""
+
 import sys
 from pathlib import Path
 
@@ -18,9 +20,11 @@ EXPECTED_DIMENSIONS = {
 
 
 def test_physical_hilbert_space():
+    """Check physical dimensions, initial logical state, and unit norm."""
     for qubits_num, expected_dimension in (
         EXPECTED_DIMENSIONS.items()
     ):
+        # Each system starts in the physical basis state encoding |00...0>.
         fusion_system = FusionSystem(qubits_num)
 
         basis = fusion_system.basis
@@ -106,6 +110,7 @@ def test_physical_hilbert_space():
 
 
 def main():
+    """Run all section 8 physical Hilbert-space checks."""
     test_physical_hilbert_space()
     print(
         "All physical HilbertSpace tests passed."
