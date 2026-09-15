@@ -18,14 +18,16 @@ def main():
 def runCircuit():
     party = circuit()
     
-    q1 = qRegister(party, size=5)
+    alice = qubit(party)
+    bob = qubit(party)
 
-    for i in range(1):
-        q1[0].h()
-    
+    alice.h()
+    bob.flipIf(alice)
+
+
     start = time.perf_counter()
     print("start executing...")
-    result = party.measure(shots=1)
+    result = party.measure(shots=1024)
     print("finish executing...")
     end = time.perf_counter()
 
