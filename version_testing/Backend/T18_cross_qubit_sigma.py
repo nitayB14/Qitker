@@ -383,6 +383,65 @@ def test_future_cross_qubit_generators():
         fusion_system._validate_system_coherence()
 
 
+def test_sigma_four_runtime_report():
+    """Print the logical blocks, leakage, and operation data after sigma4."""
+    fusion_system = FusionSystem(2)
+    initial_label = "00"
+
+    fusion_system.sigma_global(4)
+
+    qubit_blocks = []
+
+    for qubit_id in range(fusion_system.qubits_num):
+        block_ids = tuple(
+            anyon.get_id()
+            for anyon in fusion_system.get_current_qubit_block(
+                qubit_id
+            )
+        )
+        qubit_blocks.append(block_ids)
+
+    computational_probability = (
+        fusion_system.hilbertSpace.computational_probability()
+    )
+    leakage_probability = (
+        fusion_system.hilbertSpace.leakage_probability()
+    )
+    operation = fusion_system.operation_history[-1]
+    recoupling_steps = operation.parameters["recoupling_steps"]
+
+    assert qubit_blocks == [
+        (1, 2, 3, 5),
+        (4, 6, 7, 8),
+    ]
+    assert np.isclose(
+        computational_probability + leakage_probability,
+        1.0,
+    )
+    assert operation.operation_type == "SIGMA_GLOBAL"
+    assert operation.parameters["global_index"] == 4
+
+    print()
+    print("Sigma4 runtime report")
+    print(f"  initial logical state:    |{initial_label}>")
+    print(f"  current anyon order:      {fusion_system.get_current_anyon_order()}")
+    print(f"  logical block q[0]:       {qubit_blocks[0]}")
+    print(f"  logical block q[1]:       {qubit_blocks[1]}")
+    print(
+        "  computational probability: "
+        f"{computational_probability:.12f}"
+    )
+    print(
+        "  leakage probability:       "
+        f"{leakage_probability:.12f}"
+    )
+    print(f"  recoupling F-moves:       {recoupling_steps}")
+    print("  operation history:")
+
+    for line in fusion_system.get_operation_history().splitlines():
+        print(f"    {line}")
+
+
 def main():
     """Run all section 18 cross-qubit sigma checks."""
     test_sigma_four_basic_physical_action()
@@ -417,6 +476,9 @@ def main():
 
     test_future_cross_qubit_generators()
     print("Future sigma8/sigma12 generators: PASS")
+
+    test_sigma_four_runtime_report()
+    print("Sigma4 runtime report: PASS")
 
     print("All section 18 cross-qubit sigma tests passed.")
 

@@ -3,6 +3,7 @@
 import sys
 from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parent.parent))
+import time
 
 
 
@@ -17,21 +18,20 @@ def main():
 def runCircuit():
     party = circuit()
     
-    #q1 = qubit(party)
-    q2 = qRegister(party, size=2)
+    q1 = qRegister(party, size=5)
 
-
-    q2.h()
-    #2.phase()
-    #q2.quarterPhase()
-
-    #q1.mix()
+    for i in range(1):
+        q1[0].h()
     
-    result = party.measure()
-    
+    start = time.perf_counter()
+    print("start executing...")
+    result = party.measure(shots=1)
+    print("finish executing...")
+    end = time.perf_counter()
+
     print(party.getCircuitDraw())
-    print(result.report(True))
-
+    print(result)
+    print(f"Runtime: {end - start:.6f} seconds")
 
 
 

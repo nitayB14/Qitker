@@ -32,7 +32,7 @@ class FusionSystem:
         if qubits_num < 1:
             raise ValueError("qubits_num must be at least 1.")
 
-        if qubits_num > 8:
+        if qubits_num > 20:
             raise ValueError("Number too big for simulation")
 
         self.qubits_num = qubits_num

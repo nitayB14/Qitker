@@ -1,11 +1,13 @@
 {
   "ExpandedNodes": [
     "",
+    "\\Braids_search",
     "\\qitker",
+    "\\qitker\\anyons",
     "\\qitker\\compiler\\reporter",
-    "\\version_testing",
-    "\\version_testing\\Backend"
+    "\\qitker\\parser",
+    "\\qitker\\QuantumMath"
   ],
-  "SelectedNode": "\\version_testing\\Backend\\T18_cross_qubit_sigma.py",
+  "SelectedNode": "\\Braids_search\\bell_state.py",
   "PreviewInSolutionExplorer": false
 }
