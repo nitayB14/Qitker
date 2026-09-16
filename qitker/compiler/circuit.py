@@ -14,6 +14,7 @@ from qitker.compiler.reporter.reporterObject import reporterObject
 from qitker.ExportCode.exportCode import export_to
 from qitker.compiler.operations.operation import operation
 from qitker.compiler.operations.opClasses import opType
+import time
 
 
 class circuit:
@@ -286,9 +287,13 @@ class circuit:
                 The string contains every measure result of circuit
         """
 
+
+        start = time.perf_counter()
         self.execute()
-        
         measureOutput = self._ex.measure(shots)
+        end = time.perf_counter()
+
+        
         filteredOutput = self.filtered(measureOutput)
         
 
@@ -299,7 +304,8 @@ class circuit:
                              self._ex.getFidelity(),
                              filteredOutput,
                              self._ex._fusionSystem.hilbertSpace.get_state_vector(),
-                             self._ex.getLeakageProbability())
+                             self._ex.getLeakageProbability(),
+                             end-start,)
         
         return obj
 

@@ -22,7 +22,7 @@ class reporterObject():
     """
 
 	def __init__(self, anyonMove, totalGates, totalBraids,
-			  shotsNumber, fidelity, percentage, finalStateVector, leakageProbability,):
+			  shotsNumber, fidelity, percentage, finalStateVector, leakageProbability, executionTime,):
 
 		self._anyonMove = anyonMove
 		self._totalGates = totalGates
@@ -32,6 +32,7 @@ class reporterObject():
 		self._percentage = percentage
 		self._finalStateVector = finalStateVector
 		self._leakageProbability = leakageProbability
+		self._executionTime = executionTime
 
 
 	def getAnyonMove(self):
@@ -55,6 +56,12 @@ class reporterObject():
 	def getPercentageOpbject(self):
 		return self._percentage
 
+	def getLeakageProbability(self):
+		return self._leakageProbability
+
+	def getExecutionTime(self):
+		return self._executionTime
+
 	def getPercentage(self):
 		p = ""
 		for key, value in sorted(self._percentage.items(), key=lambda item: int(item[0], 2)):
@@ -63,8 +70,6 @@ class reporterObject():
 
 		return p
 
-	def getLeakageProbability(self):
-		return self._leakageProbability
 
 
 
@@ -89,6 +94,7 @@ class reporterObject():
 
 
 		reportStr += "\n[Compilation]\n----------------------------------------------\n"
+		reportStr += f"Execution time:                        : {self._executionTime:.6f} Seconds\n"
 		reportStr += "Total gates:                            : " + str(self._totalGates) + '\n'
 		reportStr += "Total braids:                           : " + str(self._totalBraids) + '\n'
 		reportStr += "Shots number:                           : " + str(self._shotsNumber) + '\n'

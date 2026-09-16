@@ -20,20 +20,18 @@ def runCircuit():
     
     alice = qubit(party)
     bob = qubit(party)
+    charlie = qubit(party)
 
     alice.h()
     bob.flipIf(alice)
+    charlie.flipIf(bob)
 
 
-    start = time.perf_counter()
-    print("start executing...")
+
     result = party.measure(shots=1024)
-    print("finish executing...")
-    end = time.perf_counter()
 
     print(party.getCircuitDraw())
     print(result)
-    print(f"Runtime: {end - start:.6f} seconds")
 
 
 

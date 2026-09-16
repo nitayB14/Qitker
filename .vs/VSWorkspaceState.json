@@ -1,11 +1,13 @@
 {
   "ExpandedNodes": [
     "",
-    "\\Braids_search",
     "\\Examples",
     "\\qitker",
-    "\\qitker\\parser"
+    "\\qitker\\compiler",
+    "\\qitker\\compiler\\reporter",
+    "\\qitker\\parser",
+    "\\qitker\\QuantumMath"
   ],
-  "SelectedNode": "\\Braids_search\\grover.py",
+  "SelectedNode": "\\Examples\\V0_run.py",
   "PreviewInSolutionExplorer": false
 }

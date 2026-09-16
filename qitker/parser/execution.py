@@ -3,6 +3,8 @@ import numpy as np
 
 from qitker.parser.sequenceOperation import sequenceOperation
 from qitker.anyons.FusionSystem import FusionSystem
+from qitker.parser import routing
+
 
 seqOp = sequenceOperation()
 
@@ -53,44 +55,68 @@ class execution:
 
     
     def applyGate(self, opType):
-        """
-        Create new operation sequence and add to the logical qubit
-    
-        Args:
-            - opType (opType):
-                operation obj
-
-        Returns:
-            - None
-        """
-        
-        name = opType.getName()
+        name = opType.getName().upper()
         target = opType.getTarget()
 
-        seq = seqOp.getSeq(name)
-        
-        self.applySequence(target, seq)
+        controllers = (
+            tuple(opType.getControllers())
+            if hasattr(opType, "getControllers")
+            else ()
+        )
+
+        gate_key = ("C" * len(controllers)) + name
+
+        if gate_key in seqOp.sequences:
+            gate_sequence = seqOp.getSeq(gate_key)
+        else:
+            record = self.build_sequence(gate_key)
+            gate_sequence = record["sequence"]
+
+        qubits_num = self._fusionSystem.qubits_num
+
+        if not controllers:
+            execution_sequence = routing.shift_sequence(
+                sequence=gate_sequence,
+                start_slot=target,
+                qubits_num=qubits_num,
+            )
+
+        else:
+            required_order = routing.get_required_order(
+                target=target,
+                controllers=controllers,
+            )
+
+            route_sequence = routing.get_routing_sequence(
+                required_order=required_order,
+                qubits_num=qubits_num,
+            )
+
+            physical_gate_sequence = routing.shift_sequence(
+                sequence=gate_sequence,
+                start_slot=0,
+                qubits_num=qubits_num,
+            )
+
+            unroute_sequence = routing.invert_sequence(
+                route_sequence
+            )
+
+            execution_sequence = (
+                route_sequence
+                + physical_gate_sequence
+                + unroute_sequence
+            )
+
+        self.applySequence(execution_sequence)
         
 
 
             
-    def applySequence(self, qubitTarget, seq):
-        """
-        Apply sequence of sigma(x) on the anyons     
-        
-        Args:
-            - qubitTarget (int):
-                id of logical qubit
-            - seq (list):
-                sigma operation (1, -1, 2, -2, 3, -3...)
-
-        Returns:
-            - None
-        """
-        
-        for i in seq:
+    def applySequence(self, seq):
+        for index in seq:
+            self._fusionSystem.sigma_global(index)
             self._braidsNumber += 1
-            self._fusionSystem.sigma(qubit_id=qubitTarget, index=i)
 
 
 
@@ -132,6 +158,20 @@ class execution:
         )
 
         return probability
+
+
+
+
+    def build_sequence(self, gate_key: str,) -> dict:
+        """
+        Search for or construct a physical braid sequence for a gate
+        that is not present in the saved sequence database.
+        """
+
+        raise NotImplementedError(
+            f"Automatic braid synthesis for {gate_key} "
+            "is not implemented yet."
+        )
             
     #returning string with basic information on the execution
     def __repr__(self):
