@@ -2,8 +2,10 @@
   "ExpandedNodes": [
     "",
     "\\Braids_search",
-    "\\qitker\\QuantumMath"
+    "\\Examples",
+    "\\qitker",
+    "\\qitker\\parser"
   ],
-  "SelectedNode": "\\Braids_search\\GHZ.py",
+  "SelectedNode": "\\Braids_search\\grover.py",
   "PreviewInSolutionExplorer": false
 }

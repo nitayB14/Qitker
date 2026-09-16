@@ -17,11 +17,17 @@ whose matrix approaches an off-diagonal unitary, using FR^2F and Eq. (22).
 generate_controlled_weave(fidelity=99.99) inserts the control pair into the
 target using the FOUR-anyon construction, Eqs. (20)--(21), applies that
 phase weave, then extracts it. Its target is a controlled pi rotation,
-locally equivalent to CNOT; local correction braids are still pending.
+locally equivalent to each controlled Pauli gate.
 
-generate_cnot(fidelity=99.99) compiles those local corrections and measures
-the complete physical sigma sequence against CX itself. Its target_reached
-flag also requires the requested worst-case leakage bound and restored order.
+generate_controlled_pauli(gate, fidelity=99.99) compiles the required local
+corrections and measures the complete physical sigma sequence against CX, CY,
+or CZ itself. Its target_reached flag also requires the requested worst-case
+leakage bound and restored order. generate_cnot remains as a compatibility
+wrapper.
+
+generate_controlled_phase(gate, fidelity=99.99) constructs CS or CT from two
+verified CX braids and locally compiled half-angle phase rotations, then scores
+the complete physical sequence against the requested controlled phase gate.
 
 Fidelity arguments and reported average gate fidelities are percentages.
 Leakage values are probabilities. Results stay in memory; no files are saved.
@@ -29,6 +35,7 @@ Leakage values are probabilities. Results stay in memory; no files are saved.
 
 import sys
 from pathlib import Path
+import time
 
 import numpy as np
 
@@ -461,13 +468,35 @@ def generate_controlled_weave(fidelity=99.99, max_leakage=None, max_iterations=3
     return best
 
 
-def cnot_local_corrections(target_matrix):
-    """Find P,S such that (P tensor S) controlled-V (I tensor S^-1) = CX.
+def _normalize_controlled_gate(gate):
+    """Return a base-gate name; accept either G or CG spelling."""
+    if not isinstance(gate, str):
+        raise TypeError("gate must be X, Y, Z, S, T or its controlled spelling.")
+    gate = gate.strip().upper()
+    if gate in {"CX", "CY", "CZ", "CS", "CT"}:
+        gate = gate[1:]
+    if gate not in {"X", "Y", "Z", "S", "T"}:
+        raise ValueError("gate must be X, Y, Z, S, T, CX, CY, CZ, CS, or CT.")
+    return gate
+
+
+def _normalize_controlled_pauli(gate):
+    """Return X, Y, or Z for the locally equivalent controlled-pi path."""
+    gate = _normalize_controlled_gate(gate)
+    if gate not in {"X", "Y", "Z"}:
+        raise ValueError("controlled-pi synthesis supports only X, Y, or Z.")
+    return gate
+
+
+def controlled_pauli_local_corrections(target_matrix, gate="X"):
+    """Find local corrections that turn controlled-V into CX, CY, or CZ.
 
     V = exp(i*chi) N with N Hermitian, traceless, and N^2=I. Its eigenbasis
-    sends N to Z, followed by H to send Z to X. P cancels exp(i*chi) only
-    on the control=1 branch. This phase must not be discarded as global.
+    sends N to Z, followed by H to send Z to X. A final basis change maps X
+    to the requested Pauli. P cancels exp(i*chi) only on the control=1 branch;
+    this phase must not be discarded as global.
     """
+    gate = _normalize_controlled_pauli(gate)
     target = np.asarray(target_matrix, dtype=complex)
     if target.shape != (4, 4) or not np.all(np.isfinite(target)):
         raise ValueError("Expected a finite 4x4 controlled-pi target.")
@@ -483,15 +512,38 @@ def cnot_local_corrections(target_matrix):
     if not np.allclose(n, n.conj().T, atol=1e-10, rtol=0):
         raise RuntimeError("Failed to extract the Hermitian rotation axis.")
     _, eigenvectors = np.linalg.eigh(n)
-    s = math_constant.H @ eigenvectors[:, ::-1].conj().T
+    cnot_basis = math_constant.H @ eigenvectors[:, ::-1].conj().T
+    output_basis = {
+        "X": math_constant.I,
+        "Y": math_constant.S,
+        "Z": math_constant.H,
+    }[gate]
+    basis_change = output_basis @ cnot_basis
     p = np.diag([1, np.exp(-1j * chi)])
-    cx = np.eye(4, dtype=complex)
-    cx[2:, 2:] = math_constant.X
-    corrected = np.kron(p, s) @ target @ np.kron(np.eye(2), s.conj().T)
-    if not np.allclose(corrected, cx, atol=1e-10, rtol=0):
-        raise RuntimeError("Analytic local corrections do not produce CX.")
-    return {"target_before": s.conj().T, "target_after": s,
-            "control_after": p, "control_phase": chi, "cnot_matrix": cx}
+    controlled_gate = np.eye(4, dtype=complex)
+    controlled_gate[2:, 2:] = math_constant.GATE_MATRICES[gate]
+    corrected = (
+        np.kron(p, basis_change)
+        @ target
+        @ np.kron(np.eye(2), basis_change.conj().T)
+    )
+    if not np.allclose(corrected, controlled_gate, atol=1e-10, rtol=0):
+        raise RuntimeError(f"Analytic local corrections do not produce C{gate}.")
+    return {
+        "gate": gate,
+        "target_before": basis_change.conj().T,
+        "target_after": basis_change,
+        "control_after": p,
+        "control_phase": chi,
+        "controlled_matrix": controlled_gate,
+    }
+
+
+def cnot_local_corrections(target_matrix):
+    """Compatibility wrapper for the original CX correction helper."""
+    corrections = controlled_pauli_local_corrections(target_matrix, "X")
+    corrections["cnot_matrix"] = corrections["controlled_matrix"]
+    return corrections
 
 
 def _compile_local_correction(target, level, net, sk):
@@ -514,19 +566,22 @@ def _compile_local_correction(target, level, net, sk):
             sk._as_su2(v @ w @ v.conj().T @ w.conj().T @ matrix))
 
 
-def generate_cnot(fidelity=99.99, max_leakage=None, max_iterations=3,
-                  local_net_depth=7, max_local_refinements=2):
-    """Return a verified physical CX braid for control=0, target=1.
+def generate_controlled_pauli(gate="X", fidelity=99.99, max_leakage=None,
+                              max_iterations=3, local_net_depth=7,
+                              max_local_refinements=2):
+    """Return a verified physical CX, CY, or CZ braid for q[0] -> q[1].
 
-    fidelity is average gate fidelity in PERCENT against CX itself, without
-    postselection. max_leakage is a worst-case probability (default 1-F/100).
-    Reserve an eighth of the infidelity budget for the controlled weave;
-    the FINAL complete gate score, not that allocation, decides success.
+    gate accepts X/Y/Z and CX/CY/CZ. fidelity is average gate fidelity in
+    PERCENT against the requested controlled gate itself, without postselection.
+    max_leakage is a worst-case probability (default 1-F/100). Reserve an
+    eighth of the infidelity budget for the controlled weave; the FINAL complete
+    gate score, not that allocation, decides success.
 
     Local synthesis is bounded by max_local_refinements. If a budget runs
     out, return the best evaluated sequence with target_reached=False.
     No gate library, backend, or saved braid file is changed.
     """
+    gate = _normalize_controlled_pauli(gate)
     _validate_fidelity(fidelity)
     _validate_iterations(max_iterations)
     _validate_iterations(local_net_depth)
@@ -537,7 +592,7 @@ def generate_cnot(fidelity=99.99, max_leakage=None, max_iterations=3,
     # Avoid rounding a very tight but finite request up to the forbidden 100%.
     weave_fidelity = min(weave_fidelity, float(np.nextafter(100.0, 0.0)))
     weave = generate_controlled_weave(weave_fidelity, max_leakage, max_iterations)
-    corrections = cnot_local_corrections(weave["target_matrix"])
+    corrections = controlled_pauli_local_corrections(weave["target_matrix"], gate)
 
     # Import only for local synthesis; reuse helpers without their saving path.
     import solovay_kitaev as sk
@@ -546,7 +601,7 @@ def generate_cnot(fidelity=99.99, max_leakage=None, max_iterations=3,
         "sigma1_squared": {"sequence": (1, 1)},
         "sigma2_squared": {"sequence": (2, 2)},
     })
-    engine = braid_searching(2, "X", target=1, controllers=(0,))
+    engine = braid_searching(2, gate, target=1, controllers=(0,))
     best = None
     history = []
     for level in range(max_local_refinements + 1):
@@ -568,7 +623,7 @@ def generate_cnot(fidelity=99.99, max_leakage=None, max_iterations=3,
         ))
         candidate = {
             "sequence": sequence, "control": 0, "target": 1,
-            "target_kind": "CNOT", "target_matrix": engine.target_matrix,
+            "target_kind": f"C{gate}", "target_matrix": engine.target_matrix,
             "requested_fidelity": float(fidelity), "max_leakage": float(max_leakage),
             "result": result, "local_refinement": level,
             "weave": weave, "local_corrections": corrections,
@@ -595,6 +650,180 @@ def generate_cnot(fidelity=99.99, max_leakage=None, max_iterations=3,
     best["replay_error"] = engine.verify_with_qitker(best["sequence"])
     best["history"] = history
     return best
+
+
+def generate_cnot(fidelity=99.99, max_leakage=None, max_iterations=3,
+                  local_net_depth=7, max_local_refinements=2):
+    """Compatibility wrapper returning a verified physical CX braid."""
+    return generate_controlled_pauli(
+        "X", fidelity, max_leakage, max_iterations,
+        local_net_depth, max_local_refinements,
+    )
+
+
+def generate_cy(fidelity=99.99, max_leakage=None, max_iterations=3,
+                local_net_depth=7, max_local_refinements=2):
+    """Return a verified physical CY braid for control=0, target=1."""
+    return generate_controlled_pauli(
+        "Y", fidelity, max_leakage, max_iterations,
+        local_net_depth, max_local_refinements,
+    )
+
+
+def generate_cz(fidelity=99.99, max_leakage=None, max_iterations=3,
+                local_net_depth=7, max_local_refinements=2):
+    """Return a verified physical CZ braid for control=0, target=1."""
+    return generate_controlled_pauli(
+        "Z", fidelity, max_leakage, max_iterations,
+        local_net_depth, max_local_refinements,
+    )
+
+
+def generate_controlled_phase(gate="S", fidelity=99.99, max_leakage=None,
+                              max_iterations=3, local_net_depth=7,
+                              max_local_refinements=2):
+    """Return a verified physical CS or CT braid for q[0] -> q[1].
+
+    For P(theta) equal to S or T, use the exact circuit identity
+
+        CP(theta) = (P(theta/2) tensor P(theta/2))
+                    CX (I tensor P(-theta/2)) CX.
+
+    The two CX occurrences reuse one generated physical braid. The half-angle
+    phase is compiled as a pure local braid, and its exact inverse word supplies
+    the negative phase. The complete sequence is evaluated without postselection.
+    """
+    gate = _normalize_controlled_gate(gate)
+    if gate not in {"S", "T"}:
+        raise ValueError("controlled-phase synthesis supports only S or T.")
+    _validate_fidelity(fidelity)
+    _validate_iterations(max_iterations)
+    _validate_iterations(local_net_depth)
+    _validate_iterations(max_local_refinements)
+    if max_leakage is None:
+        max_leakage = 1 - fidelity / 100
+    if isinstance(max_leakage, (bool, np.bool_)) or not isinstance(
+        max_leakage, (int, float, np.integer, np.floating)
+    ):
+        raise TypeError("max_leakage must be a probability.")
+    if not np.isfinite(max_leakage) or not 0 <= max_leakage <= 1:
+        raise ValueError("max_leakage must be a probability in [0, 1].")
+
+    # Two entangling gates and three local phase occurrences share the final
+    # error budget. Final full-gate evaluation remains the acceptance test.
+    component_fidelity = 100 - (100 - float(fidelity)) / 4
+    component_fidelity = min(
+        component_fidelity, float(np.nextafter(100.0, 0.0))
+    )
+    cnot = generate_cnot(
+        fidelity=component_fidelity,
+        max_leakage=float(max_leakage) / 2,
+        max_iterations=max_iterations,
+        local_net_depth=local_net_depth,
+        max_local_refinements=max_local_refinements,
+    )
+    cnot_word = tuple(cnot["sequence"])
+
+    import solovay_kitaev as sk
+    local_engine = braid_searching(1, "I", target=0)
+    net = sk._build_macro_mitm_net(local_engine, local_net_depth, {
+        "sigma1_squared": {"sequence": (1, 1)},
+        "sigma2_squared": {"sequence": (2, 2)},
+    })
+    theta = {"S": np.pi / 2, "T": np.pi / 4}[gate]
+    half_phase = np.diag([1, np.exp(1j * theta / 2)])
+    engine = braid_searching(2, gate, target=1, controllers=(0,))
+    best = None
+    history = []
+    for level in range(max_local_refinements + 1):
+        phase_word, _ = _compile_local_correction(
+            half_phase, level, net, sk
+        )
+        phase_matrix, phase_order = local_engine.run_sequence(phase_word)
+        if phase_order != local_engine.initial_order:
+            raise RuntimeError("Local half-phase changed the endpoint permutation.")
+        control_phase = tuple(phase_word)
+        target_phase = tuple(
+            (1 if index > 0 else -1) * (abs(index) + 4)
+            for index in phase_word
+        )
+        target_inverse_phase = _inverse_word(target_phase)
+        sequence = sk._reduce_word(
+            cnot_word
+            + target_inverse_phase
+            + cnot_word
+            + control_phase
+            + target_phase
+        )
+        result = _evaluate_controlled(engine, sequence, engine.target_matrix)
+        physical, _ = engine.run_sequence(sequence)
+        result["control_zero_error"] = float(np.linalg.norm(
+            physical[:, :2]
+            - result["global_phase"] * engine.initial_columns[:, :2],
+            ord=2,
+        ))
+        candidate = {
+            "sequence": sequence,
+            "control": 0,
+            "target": 1,
+            "target_kind": f"C{gate}",
+            "target_matrix": engine.target_matrix,
+            "requested_fidelity": float(fidelity),
+            "max_leakage": float(max_leakage),
+            "result": result,
+            "local_refinement": level,
+            "phase_angle": theta,
+            "half_phase_matrix": half_phase,
+            "half_phase_sequence": control_phase,
+            "target_inverse_phase_sequence": target_inverse_phase,
+            "cnot_component": cnot,
+            "component_fidelity": component_fidelity,
+            "local_fidelities": {
+                "half_phase": _average_gate_fidelity(
+                    phase_matrix, half_phase
+                ),
+            },
+            "target_reached": (
+                result["average_gate_fidelity"] >= fidelity
+                and result["maximum_leakage"] <= max_leakage
+                and result["order_restored"]
+            ),
+        }
+        history.append({
+            "local_refinement": level,
+            "braid_count": len(sequence),
+            "average_gate_fidelity": result["average_gate_fidelity"],
+            "maximum_leakage": result["maximum_leakage"],
+        })
+        if best is None or (
+            result["average_gate_fidelity"]
+            > best["result"]["average_gate_fidelity"]
+        ):
+            best = candidate
+        if candidate["target_reached"]:
+            best = candidate
+            break
+    best["replay_error"] = engine.verify_with_qitker(best["sequence"])
+    best["history"] = history
+    return best
+
+
+def generate_cs(fidelity=99.99, max_leakage=None, max_iterations=3,
+                local_net_depth=7, max_local_refinements=2):
+    """Return a verified physical CS braid for control=0, target=1."""
+    return generate_controlled_phase(
+        "S", fidelity, max_leakage, max_iterations,
+        local_net_depth, max_local_refinements,
+    )
+
+
+def generate_ct(fidelity=99.99, max_leakage=None, max_iterations=3,
+                local_net_depth=7, max_local_refinements=2):
+    """Return a verified physical CT braid for control=0, target=1."""
+    return generate_controlled_phase(
+        "T", fidelity, max_leakage, max_iterations,
+        local_net_depth, max_local_refinements,
+    )
 
 
 def print_result(candidate):
@@ -651,15 +880,42 @@ def search_better_sequence(max_iterations=2, target_error=1e-10, max_leakage=1e-
     return best
 
 
-def main():
-    print("CNOT: control=q[0], target=q[1] (including physical local corrections)")
-    result = generate_cnot(fidelity=99.99)
+def searchControlledGate(gate="X", controls=(0,), target=1, fidelity=99.999,
+                         max_leakage=None, max_iterations=3,
+                         local_net_depth=7, max_local_refinements=2):
+    gate = _normalize_controlled_gate(gate)
+    if tuple(controls) != (0,) or target != 1:
+        raise NotImplementedError(
+            "Physical synthesis currently supports control=q[0], target=q[1]."
+        )
+    print(f"C{gate}: control=q[0], target=q[1] (including physical local corrections)")
+    generator = (
+        generate_controlled_pauli
+        if gate in {"X", "Y", "Z"}
+        else generate_controlled_phase
+    )
+    result = generator(
+        gate, fidelity, max_leakage, max_iterations,
+        local_net_depth, max_local_refinements,
+    )
     metrics = result["result"]
     print(f"Requested average gate fidelity: {result['requested_fidelity']}%")
     print(f"Measured average gate fidelity: {metrics['average_gate_fidelity']:.12f}%")
-    weave = result["weave"]
-    print(f"Exchange/off-diagonal iterations: {weave['exchange_iterations']}/{weave['offdiagonal_iterations']}")
-    print(f"Local synthesis refinement: {result['local_refinement']}")
+    if "weave" in result:
+        weave = result["weave"]
+        print(
+            "Exchange/off-diagonal iterations: "
+            f"{weave['exchange_iterations']}/{weave['offdiagonal_iterations']}"
+        )
+        print(f"Local synthesis refinement: {result['local_refinement']}")
+    else:
+        cnot = result["cnot_component"]
+        print(
+            "CX component fidelity: "
+            f"{cnot['result']['average_gate_fidelity']:.12f}%"
+        )
+        print(f"CX component braid count: {len(cnot['sequence'])}")
+        print(f"Half-phase synthesis refinement: {result['local_refinement']}")
     print(f"Physical braid count: {len(result['sequence'])}")
     print(f"Maximum leakage: {metrics['maximum_leakage']:.6e}")
     print(f"Control=0 identity error: {metrics['control_zero_error']:.6e}")
@@ -670,7 +926,23 @@ def main():
     with np.printoptions(precision=8, suppress=True):
         print(metrics["computational_matrix"] / metrics["global_phase"])
     print(f"Final sequence: {result['sequence']}")
+    return result
 
+
+def main():
+    #for gate in ("X", "Y", "Z", "S", "T"):
+    for gate in ("S", "T"):
+        print(f"start searching C{gate} braiding")
+        start = time.perf_counter()
+        searchControlledGate(
+            gate=gate,
+            controls=(0,),
+            target=1,
+            fidelity=99.99,
+            max_leakage=None,
+        )
+        end = time.perf_counter()
+        print(f"Runtime: {end - start:.6f} seconds")
 
 if __name__ == "__main__":
     main()
