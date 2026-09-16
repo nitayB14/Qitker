@@ -124,15 +124,20 @@ class execution:
             
     def getFidelity(self):
         """
-        Return Fidelity (how close our matrix to idial matrix)
+        Return the fidelity between the ideal logical
+        output state and the actual physical output state.
 
-        Args:
-            - None
-
-        Returns:
-            - (float) : fidelity
+        Leakage is included in the fidelity because the
+        ideal state has zero amplitude in leakage states.
         """
-        return f"{self._fusionSystem.hilbertSpace.gate_fidelity() * 100:.4f}%"
+
+        fidelity = (
+            self._fusionSystem
+            .hilbertSpace
+            .state_fidelity()
+        )
+
+        return f"{fidelity * 100:.6f}%"
 
 
 

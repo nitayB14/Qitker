@@ -22,13 +22,13 @@ class reporterObject():
     """
 
 	def __init__(self, anyonMove, totalGates, totalBraids,
-			  shotsNumber, fidelity, percentage, finalStateVector, leakageProbability, executionTime,):
+			  shotsNumber, outputStateFidelity, percentage, finalStateVector, leakageProbability, executionTime,):
 
 		self._anyonMove = anyonMove
 		self._totalGates = totalGates
 		self._totalBraids = totalBraids
 		self._shotsNumber = shotsNumber
-		self._fidelity = fidelity
+		self._outputStateFidelity = outputStateFidelity
 		self._percentage = percentage
 		self._finalStateVector = finalStateVector
 		self._leakageProbability = leakageProbability
@@ -51,7 +51,7 @@ class reporterObject():
 		return self._shotsNumber
 
 	def getFidelity(self):
-		return self._fidelity
+		return self._outputStateFidelity
 
 	def getPercentageOpbject(self):
 		return self._percentage
@@ -94,11 +94,11 @@ class reporterObject():
 
 
 		reportStr += "\n[Compilation]\n----------------------------------------------\n"
-		reportStr += f"Execution time:                        : {self._executionTime:.6f} Seconds\n"
+		reportStr += f"Execution time:                         : {self._executionTime:.6f} Seconds\n"
 		reportStr += "Total gates:                            : " + str(self._totalGates) + '\n'
 		reportStr += "Total braids:                           : " + str(self._totalBraids) + '\n'
 		reportStr += "Shots number:                           : " + str(self._shotsNumber) + '\n'
-		reportStr += "Braid approximation fidelity:           : " + str(self._fidelity) + '\n'
+		reportStr += "Output state fidelity:                  : " + str(self._outputStateFidelity) + '\n'
 		reportStr += (f"Leakage probability:                    : {self._leakageProbability * 100:.4f}%")
 		reportStr += "\n\n[Results]\n----------------------------------------------\n"
 		reportStr += str(self.getPercentage()) + '\n'

@@ -9,30 +9,36 @@ import time
 
 from qitker import circuit, qubit, qRegister
 
-def main():    
-    runCircuit()
-
-
-    
-
-def runCircuit():
+def main():
     party = circuit()
     
     alice = qubit(party)
     bob = qubit(party)
-    charlie = qubit(party)
+    
+    alice.mix()
+    bob.mix()
 
-    alice.h()
-    bob.flipIf(alice)
-    charlie.flipIf(bob)
+    bob.phaseIf(alice)
 
+    alice.mix()
+    bob.mix()
+
+    alice.flip()
+    bob.flip()
+
+    bob.phaseIf(alice)
+
+    bob.flip()
+    alice.flip()
+
+    bob.mix()
+    alice.mix()
 
 
     result = party.measure(shots=1024)
 
     print(party.getCircuitDraw())
     print(result)
-
 
 
 main()

@@ -28,7 +28,19 @@ class HilbertSpace:
         self.ideal_operations = []
 
 
+        self.logical_dimension = 2 ** self.qubits_num
 
+        self.logical_labels = tuple(
+            format(index, f"0{self.qubits_num}b")
+            for index in range(self.logical_dimension)
+        )
+
+        self.ideal_state_vector = np.zeros(
+            self.logical_dimension,
+            dtype=complex,
+        )
+
+        self.ideal_state_vector[0] = 1.0
 
 
 
@@ -142,25 +154,170 @@ class HilbertSpace:
         return results
 
     
-    def add_ideal_operation(self, gate_name: str, qubit_id: int) -> None:
+    def add_ideal_operation(
+        self,
+        gate_name: str,
+        target: int,
+        controllers=(),
+    ) -> None:
 
-        if not isinstance(qubit_id, int):
-            raise TypeError("qubit_id must be an integer.")
-
-        if qubit_id < 0 or qubit_id >= self.qubits_num:
-            raise ValueError(
-                f"Qubit {qubit_id} does not exist."
+        if not isinstance(gate_name, str):
+            raise TypeError(
+                "gate_name must be a string."
             )
 
-        local_gate = self._get_gate_matrix(gate_name)
-        self.local_ideal_operators[qubit_id] = (local_gate @ self.local_ideal_operators[qubit_id])
+        gate_name = gate_name.upper()
+
+        local_gate = self._get_gate_matrix(
+            gate_name
+        )
+
+        if (
+            isinstance(target, bool)
+            or not isinstance(target, int)
+        ):
+            raise TypeError(
+                "target must be an integer."
+            )
+
+        if target < 0 or target >= self.qubits_num:
+            raise ValueError(
+                f"Qubit {target} does not exist."
+            )
+
+        if not isinstance(controllers, (tuple, list)):
+            raise TypeError(
+                "controllers must be a tuple or list."
+            )
+
+        controllers = tuple(controllers)
+
+        for controller in controllers:
+            if (
+                isinstance(controller, bool)
+                or not isinstance(controller, int)
+            ):
+                raise TypeError(
+                    "Controller indices must be integers."
+                )
+
+            if (
+                controller < 0
+                or controller >= self.qubits_num
+            ):
+                raise ValueError(
+                    f"Qubit {controller} does not exist."
+                )
+
+        if len(set(controllers)) != len(controllers):
+            raise ValueError(
+                "Controllers must be unique."
+            )
+
+        if target in controllers:
+            raise ValueError(
+                "The target cannot also be a controller."
+            )
+
+        self.ideal_state_vector = (
+            self._apply_ideal_gate_to_state(
+                state=self.ideal_state_vector,
+                gate=local_gate,
+                target=target,
+                controllers=controllers,
+            )
+        )
 
         self.ideal_operations.append({
             "gate": gate_name,
-            "target": qubit_id
+            "target": target,
+            "controllers": controllers,
         })
 
+        if not controllers:
+            self.local_ideal_operators[target] = (
+                local_gate
+                @ self.local_ideal_operators[target]
+            )
+
     
+    def _apply_ideal_gate_to_state(
+        self,
+        state: np.ndarray,
+        gate: np.ndarray,
+        target: int,
+        controllers: tuple,
+    ) -> np.ndarray:
+
+        state = np.asarray(
+            state,
+            dtype=complex,
+        )
+
+        if state.shape != (
+            self.logical_dimension,
+        ):
+            raise ValueError(
+                "Logical state shape does not match "
+                "the logical Hilbert-space dimension."
+            )
+
+        if gate.shape != (2, 2):
+            raise ValueError(
+                "A logical base gate must be a 2x2 matrix."
+            )
+
+        target_mask = (
+            1 << (self.qubits_num - 1 - target)
+        )
+
+        controller_masks = tuple(
+            1 << (
+                self.qubits_num
+                - 1
+                - controller
+            )
+            for controller in controllers
+        )
+
+        result = state.copy()
+
+        for zero_index in range(
+            self.logical_dimension
+        ):
+            if zero_index & target_mask:
+                continue
+
+            if any(
+                (
+                    zero_index
+                    & controller_mask
+                ) == 0
+                for controller_mask
+                in controller_masks
+            ):
+                continue
+
+            one_index = (
+                zero_index | target_mask
+            )
+
+            zero_amplitude = state[zero_index]
+            one_amplitude = state[one_index]
+
+            result[zero_index] = (
+                gate[0, 0] * zero_amplitude
+                + gate[0, 1] * one_amplitude
+            )
+
+            result[one_index] = (
+                gate[1, 0] * zero_amplitude
+                + gate[1, 1] * one_amplitude
+            )
+
+        return result
+
+
 
     def _get_gate_matrix(self, gate_name: str) -> np.ndarray:
         if not isinstance(gate_name, str):
@@ -178,23 +335,52 @@ class HilbertSpace:
         return fibonacciConst.GATE_MATRICES[gate_name]
 
 
-    def gate_fidelity(self) -> float:
-        fidelity = 1.0
+    def state_fidelity(self) -> float:
 
-        for ideal_operator, braid_operator in zip(
-            self.local_ideal_operators,
-            self.local_braid_operators
-        ):
-            local_overlap = abs(
-                np.trace(
-                    ideal_operator.conj().T
-                    @ braid_operator
-                )
-            ) / 2
+        if not self.basis.classify_logical:
+            raise RuntimeError(
+                "State fidelity requires a stable "
+                "logical fusion basis."
+            )
 
-            fidelity *= local_overlap
+        logical_physical_indices = tuple(
+            self.basis.logical_to_physical[
+                label
+            ]
+            for label in self.logical_labels
+        )
 
-        return float(fidelity)
+        ideal_physical_state = np.zeros(
+            self.dimension,
+            dtype=complex,
+        )
+
+        ideal_physical_state[
+            list(logical_physical_indices)
+        ] = self.ideal_state_vector
+
+        fidelity = abs(
+            np.vdot(
+                ideal_physical_state,
+                self.state_vector,
+            )
+        ) ** 2
+
+        tolerance = 1e-10
+
+        if fidelity > 1.0 + tolerance:
+            raise RuntimeError(
+                "Calculated state fidelity is greater "
+                "than one."
+            )
+
+        return float(
+            np.clip(
+                fidelity,
+                0.0,
+                1.0,
+            )
+        )
     
     def _decode_measurement(self,physical_index: int,) -> str:
         if physical_index in (self.basis.physical_to_logical):

@@ -364,8 +364,27 @@ class FusionSystem:
     def clear_operation_history(self):
         self.operation_history.clear()
 
-    def addOperationToIdealMatrix(self, operation):
-        self.hilbertSpace.add_ideal_operation(operation.getName(), operation.getTarget())
+    def addOperationToIdealMatrix(
+        self,
+        operation,
+    ):
+
+        controllers = (
+            tuple(
+                operation.getControllers()
+            )
+            if hasattr(
+                operation,
+                "getControllers",
+            )
+            else ()
+        )
+
+        self.hilbertSpace.add_ideal_operation(
+            gate_name=operation.getName(),
+            target=operation.getTarget(),
+            controllers=controllers,
+        )
 
     def _commit_basis_state(self, new_basis: FusionBasis, new_state_vector,) -> None:
         """
