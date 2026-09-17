@@ -94,7 +94,7 @@ class reporterObject():
 
 
 		reportStr += "\n[Compilation]\n----------------------------------------------\n"
-		reportStr += f"Execution time:                         : {self._executionTime:.6f} Seconds\n"
+		reportStr += f"Execution time:                         : {self._executionTime:.2f} s\n"
 		reportStr += "Total gates:                            : " + str(self._totalGates) + '\n'
 		reportStr += "Total braids:                           : " + str(self._totalBraids) + '\n'
 		reportStr += "Shots number:                           : " + str(self._shotsNumber) + '\n'

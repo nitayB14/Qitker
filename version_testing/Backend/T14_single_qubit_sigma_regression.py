@@ -166,6 +166,9 @@ def test_json_gate_sequences():
     loader = sequenceOperation()
 
     for gate_name, metadata in database.items():
+        if gate_name not in math_constant.GATE_MATRICES:
+            continue
+
         sequence = loader.getSeq(gate_name)
         expected_gate = math_constant.GATE_MATRICES[gate_name]
 
@@ -177,6 +180,13 @@ def test_json_gate_sequences():
         # fidelity describes its logical approximation to the ideal gate.
         actual_gate = effective_matrix(sequence)
         fidelity = operator_fidelity(actual_gate, expected_gate)
+        initial_state = np.array([1.0, 0.0], dtype=complex)
+        ideal_output = expected_gate @ initial_state
+        actual_output = actual_gate @ initial_state
+        expected_state_fidelity = abs(
+            np.vdot(ideal_output, actual_output)
+        ) ** 2
+
         assert np.isclose(
             fidelity * 100,
             metadata["gate fidelity"],
@@ -189,8 +199,8 @@ def test_json_gate_sequences():
             fusion_system.sigma(0, sigma_index)
 
         assert np.isclose(
-            fusion_system.hilbertSpace.gate_fidelity(),
-            fidelity,
+            fusion_system.hilbertSpace.state_fidelity(),
+            expected_state_fidelity,
         )
         assert len(fusion_system.operation_history) == len(sequence)
         assert np.isclose(

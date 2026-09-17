@@ -1,11 +1,9 @@
+
 """Compare two quantum registers with Grover-style phase amplification."""
 
 import sys
 from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parent.parent))
-import time
-
-
 
 from qitker import circuit, qubit, qRegister
 
@@ -15,30 +13,20 @@ def main():
     alice = qubit(party)
     bob = qubit(party)
     
+    # Create a Bell state
     alice.mix()
-    bob.mix()
+    bob.flipIf(alice)
 
-    bob.phaseIf(alice)
+    
 
-    alice.mix()
-    bob.mix()
+    # Visualize the circuit
+    print(party.getCircuitDraw())   
 
-    alice.flip()
-    bob.flip()
-
-    bob.phaseIf(alice)
-
-    bob.flip()
-    alice.flip()
-
-    bob.mix()
-    alice.mix()
-
-
+    # Run on the Fibonacci-anyon backend
     result = party.measure(shots=1024)
-
-    print(party.getCircuitDraw())
     print(result)
 
 
 main()
+
+
