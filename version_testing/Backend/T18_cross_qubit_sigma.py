@@ -13,6 +13,18 @@ from qitker.anyons.Anyon import Charge
 from qitker.anyons.FusionSystem import FusionSystem
 
 
+def console_safe(value) -> str:
+    """Return text that can be printed by the active console encoding."""
+
+    encoding = sys.stdout.encoding or "utf-8"
+
+    return (
+        str(value)
+        .encode(encoding, errors="backslashreplace")
+        .decode(encoding)
+    )
+
+
 def assert_raises(expected_exception, function):
     """Verify that calling function raises the expected exception."""
     try:
@@ -439,7 +451,7 @@ def test_sigma_four_runtime_report():
     print("  operation history:")
 
     for line in fusion_system.get_operation_history().splitlines():
-        print(f"    {line}")
+        print(console_safe(f"    {line}"))
 
 
 def main():

@@ -6,6 +6,7 @@ from qitker.anyons.FusionTree import FusionTree
 from qitker.anyons.AnyonOperation import AnyonOperation
 from qitker.QuantumMath.HilbertSpace import HilbertSpace
 from qitker.anyons.FusionBasis import FusionBasis
+from qitker.anyons.FusionCache import FusionCache
 
 
 class FusionSystem:
@@ -24,7 +25,7 @@ class FusionSystem:
 
     BRAID_CONVENTION = "MOVING_ANYON_IDENTITIES"
 
-    def __init__(self, qubits_num: int):
+    def __init__(self, qubits_num: int, cache_enabled: bool = True,):
 
         if not isinstance(qubits_num, int):
             raise TypeError("qubits_num must be an integer.")
@@ -34,6 +35,8 @@ class FusionSystem:
 
         if qubits_num > 20:
             raise ValueError("Number too big for simulation")
+
+        self.cache = FusionCache(enabled=cache_enabled,)
 
         self.qubits_num = qubits_num
         self.anyons = []
@@ -50,7 +53,7 @@ class FusionSystem:
             total_charge=Charge.VACUUM
         )
 
-        self.basis = FusionBasis(tree=self.tree, qubits=self.qubits, total_charge=Charge.VACUUM)
+        self.basis = self._get_or_build_basis(classify_logical=True,)
 
         self.hilbertSpace = HilbertSpace(self.basis)
 
@@ -143,6 +146,7 @@ class FusionSystem:
             "operation_history": (self.operation_history.copy()),
             "local_braid_operators": [operator.copy() for operator in self.hilbertSpace.local_braid_operators],
         }
+
     def _restore_state_snapshot(self, snapshot: dict,) -> None:
         """
         Restore tree, basis, and HilbertSpace after a failed operation.
@@ -451,6 +455,7 @@ class FusionSystem:
 
         snapshot = self._capture_state_snapshot()
         tree_before = self.tree.to_ids()
+        old_basis = self.basis
         norm_before = np.linalg.norm(
             self.hilbertSpace.state_vector
         )
@@ -475,29 +480,34 @@ class FusionSystem:
                     "The anyons do not share the same parent."
                 )
 
-            phased_state_vector = (
-                self.hilbertSpace.state_vector_after_r(
-                    parent_path=parent_path,
-                    inverse=inverse,
-                )
-            )
+            r_plan = self._get_or_build_r_plan(
+            parent_path=parent_path,
+            inverse=inverse,)
 
+            phased_state_vector = (
+            self.hilbertSpace.state_vector_after_r(
+                parent_path=parent_path,
+                inverse=inverse,
+                r_plan=r_plan,
+            )
+        )
             
             self.tree._swap_siblings(first_id, second_id,)
             
             classify_logical = (self._tree_supports_logical_classification())
 
-            new_basis = FusionBasis(
-                tree=self.tree,
-                qubits=self.qubits,
-                total_charge=Charge.VACUUM,
-                classify_logical=classify_logical,
+            new_basis = self._get_or_build_basis(classify_logical=classify_logical,)
+
+            reindex_map = self._get_or_build_reindex_map(
+                old_basis=old_basis,
+                new_basis=new_basis,
             )
 
             new_state_vector = (
                 self.hilbertSpace.state_vector_in_basis(
                     new_basis,
                     state_vector=phased_state_vector,
+                    reindex_map=reindex_map,
                 )
             )
 
@@ -581,6 +591,7 @@ class FusionSystem:
 
         snapshot = self._capture_state_snapshot()
         tree_before = self.tree.to_ids()
+        old_basis = self.basis
         norm_before = np.linalg.norm(
             self.hilbertSpace.state_vector
         )
@@ -625,12 +636,16 @@ class FusionSystem:
             classify_logical = (
                 self._tree_supports_logical_classification()
             )
-            new_basis = FusionBasis(
-                tree=self.tree,
-                qubits=self.qubits,
-                total_charge=Charge.VACUUM,
-                classify_logical=classify_logical,
+
+            new_basis = self._get_or_build_basis(classify_logical=classify_logical,)
+            f_plan = self._get_or_build_f_plan(
+                old_basis=old_basis,
+                new_basis=new_basis,
+                old_intermediate_cluster=old_intermediate_cluster,
+                new_intermediate_cluster=new_intermediate_cluster,
+                direction=direction,
             )
+
             new_state_vector = (
                 self.hilbertSpace.state_vector_after_f(
                     new_basis=new_basis,
@@ -641,6 +656,7 @@ class FusionSystem:
                         new_intermediate_cluster
                     ),
                     direction=direction,
+                    f_plan=f_plan,
                 )
             )
 
@@ -1211,6 +1227,185 @@ class FusionSystem:
         except Exception:
             self._restore_state_snapshot(snapshot)
             raise
+
+
+    def get_cache_stats(self) -> dict:
+        """Return a snapshot of the current cache statistics."""
+        return self.cache.snapshot_stats()
+
+
+    def reset_cache_stats(self) -> None:
+        """Reset cache counters without removing cached entries."""
+        self.cache.reset_stats()
+
+
+    def clear_cache(self) -> None:
+        """Remove cached entries and reset their counters."""
+        self.cache.clear()
+
+    def set_cache_enabled(self, enabled: bool) -> None:
+        """Enable or disable cache use for future requests."""
+        self.cache.enabled = enabled
+
+    def _get_basis_cache_key(self, classify_logical: bool,) -> tuple:
+        """Return the cache key for the current fusion-tree basis."""
+
+        tree_signature = self.tree.to_ids()
+
+        qubit_signature = tuple(
+            tuple(qubit.get_id_list())
+            for qubit in self.qubits
+        )
+
+        return (
+            tree_signature,
+            qubit_signature,
+            Charge.VACUUM,
+            classify_logical,
+        )
+
+    def _get_or_build_basis(self, classify_logical: bool,) -> FusionBasis:
+        """Return a cached basis or build and cache a new one."""
+        key = self._get_basis_cache_key(
+            classify_logical,
+        )
+
+        found, cached_basis = self.cache.lookup(
+            "basis",
+            key,
+        )
+
+        if found:
+            self._validate_cached_basis(
+                cached_basis,
+                classify_logical,
+            )
+            return cached_basis
+
+        new_basis = FusionBasis(
+            tree=self.tree,
+            qubits=self.qubits,
+            total_charge=Charge.VACUUM,
+            classify_logical=classify_logical,
+        )
+
+        self.cache.record_build("basis")
+
+        if self.cache.enabled:
+            self.cache.store(
+                "basis",
+                key,
+                new_basis,
+            )
+
+        return new_basis
+
+
+    def _validate_cached_basis(self, basis: FusionBasis, classify_logical: bool,) -> None:
+        """Verify that a cached basis belongs to this system and topology."""
+        if not isinstance(basis, FusionBasis):
+            raise TypeError(
+                "Cached basis must be a FusionBasis."
+            )
+
+        if basis.tree_signature != self.tree.to_ids():
+            raise RuntimeError(
+                "Cached FusionBasis does not match the current tree."
+            )
+
+        if basis.qubits_num != self.qubits_num:
+            raise RuntimeError(
+                "Cached FusionBasis has the wrong qubit count."
+            )
+
+        if basis.classify_logical is not classify_logical:
+            raise RuntimeError(
+                "Cached FusionBasis has the wrong classification mode."
+            )
+
+        if basis._tree is not self.tree:
+            raise RuntimeError(
+                "Cached FusionBasis belongs to another FusionSystem tree."
+            )
+
+        if basis._qubits is not self.qubits:
+            raise RuntimeError(
+                "Cached FusionBasis belongs to another FusionSystem qubit set."
+            )
+
+
+
+    def _get_or_build_reindex_map(self, old_basis: FusionBasis, new_basis: FusionBasis,) -> tuple[int, ...]:
+        return self.cache.get_or_build(
+            namespace="reindex",
+            key=(old_basis, new_basis),
+            builder=lambda: old_basis.get_reindex_map(
+                new_basis
+            ),
+        )
+
+    def _get_or_build_r_plan(
+        self,
+        parent_path: tuple,
+        inverse: bool,
+    ) -> np.ndarray:
+        return self.cache.get_or_build(
+            namespace="r_plan",
+            key=(
+                self.basis,
+                parent_path,
+                inverse,
+            ),
+            builder=lambda: self.hilbertSpace.build_r_plan(
+                parent_path=parent_path,
+                inverse=inverse,
+            ),
+        )
+
+    def _get_or_build_cluster_maps(
+        self,
+        basis: FusionBasis,
+    ) -> tuple[dict, ...]:
+        return self.cache.get_or_build(
+            namespace="cluster",
+            key=basis,
+            builder=lambda: tuple(
+                basis.get_cluster_labels(state)
+                for state in basis.states
+            ),
+        )
+
+
+    def _get_or_build_f_plan(
+        self,
+        old_basis: FusionBasis,
+        new_basis: FusionBasis,
+        old_intermediate_cluster: frozenset,
+        new_intermediate_cluster: frozenset,
+        direction: str,
+    ) -> tuple:
+        return self.cache.get_or_build(
+            namespace="f_plan",
+            key=(
+                old_basis,
+                new_basis,
+                old_intermediate_cluster,
+                new_intermediate_cluster,
+                direction,
+            ),
+            builder=lambda: self.hilbertSpace.build_f_plan(
+                new_basis=new_basis,
+                old_intermediate_cluster=old_intermediate_cluster,
+                new_intermediate_cluster=new_intermediate_cluster,
+                direction=direction,
+                old_cluster_maps=(
+                    self._get_or_build_cluster_maps(old_basis)
+                ),
+                new_cluster_maps=(
+                    self._get_or_build_cluster_maps(new_basis)
+                ),
+            ),
+        )
 
     def __str__(self):
         return (

@@ -44,8 +44,12 @@ class HilbertSpace:
 
 
 
-
-    def state_vector_in_basis(self, new_basis: FusionBasis, state_vector: np.ndarray | None = None,) -> np.ndarray:
+    def state_vector_in_basis(
+        self,
+        new_basis: FusionBasis,
+        state_vector: np.ndarray | None = None,
+        reindex_map: tuple[int, ...] | None = None,
+    ) -> np.ndarray:
         """
         Return the current statevector reindexed into new_basis.
 
@@ -63,9 +67,8 @@ class HilbertSpace:
                 "the current fusion basis."
             )
 
-        reindex_map = self.basis.get_reindex_map(
-            new_basis
-        )
+        if reindex_map is None:
+            reindex_map = self.basis.get_reindex_map(new_basis)
 
         new_state_vector = np.zeros(
             len(new_basis.states),
@@ -411,14 +414,12 @@ class HilbertSpace:
             @ self.local_braid_operators[qubit_id]
         )
 
-    def state_vector_after_r(self, parent_path: tuple, inverse: bool = False,) -> np.ndarray:
-        """
-        Return the statevector after applying an R-symbol
-        at a sibling-parent fusion channel.
 
-        This method does not modify the HilbertSpace.
-        """
-
+    def build_r_plan(
+        self,
+        parent_path: tuple,
+        inverse: bool = False,
+    ) -> np.ndarray:
         if not isinstance(parent_path, tuple):
             raise TypeError(
                 "parent_path must be a tuple."
@@ -429,7 +430,7 @@ class HilbertSpace:
                 "inverse must be a boolean."
             )
 
-        new_state_vector = np.zeros(
+        r_plan = np.empty(
             self.dimension,
             dtype=complex,
         )
@@ -455,20 +456,38 @@ class HilbertSpace:
             if inverse:
                 phase = np.conjugate(phase)
 
-            new_state_vector[index] = (
-                phase * self.state_vector[index]
+            r_plan[index] = phase
+
+        r_plan.setflags(write=False)
+        return r_plan
+
+    def state_vector_after_r(
+        self,
+        parent_path: tuple,
+        inverse: bool = False,
+        r_plan: np.ndarray | None = None,
+    ) -> np.ndarray:
+        """Return the statevector after applying an R-symbol."""
+
+        if r_plan is None:
+            r_plan = self.build_r_plan(
+                parent_path=parent_path,
+                inverse=inverse,
             )
 
-        return new_state_vector
+        return r_plan * self.state_vector
 
-    def state_vector_after_f(
+
+    def build_f_plan(
         self,
         new_basis: FusionBasis,
         old_intermediate_cluster: frozenset,
         new_intermediate_cluster: frozenset,
         direction: str,
-    ) -> np.ndarray:
-        """Return the statevector transformed into an F-related basis."""
+        old_cluster_maps: tuple[dict, ...] | None = None,
+        new_cluster_maps: tuple[dict, ...] | None = None,
+    ) -> tuple:
+        """Build the index transitions required by an F-move."""
 
         if not isinstance(new_basis, FusionBasis):
             raise TypeError(
@@ -490,6 +509,18 @@ class HilbertSpace:
                 "new_intermediate_cluster must be a frozenset."
             )
 
+        if old_cluster_maps is None:
+            old_cluster_maps = tuple(
+                self.basis.get_cluster_labels(state)
+                for state in self.basis.states
+            )
+
+        if new_cluster_maps is None:
+            new_cluster_maps = tuple(
+                new_basis.get_cluster_labels(state)
+                for state in new_basis.states
+            )
+
         def spectator_key(cluster_labels, excluded_cluster):
             items = [
                 (tuple(sorted(cluster)), charge)
@@ -498,12 +529,10 @@ class HilbertSpace:
             ]
             return tuple(sorted(items, key=lambda item: item[0]))
 
-        def build_groups(basis, excluded_cluster):
+        def build_groups(cluster_maps, excluded_cluster):
             groups = {}
 
-            for index, state in enumerate(basis.states):
-                cluster_labels = basis.get_cluster_labels(state)
-
+            for index, cluster_labels in enumerate(cluster_maps):
                 if excluded_cluster not in cluster_labels:
                     raise ValueError(
                         "Intermediate fusion channel is missing."
@@ -526,11 +555,11 @@ class HilbertSpace:
             return groups
 
         old_groups = build_groups(
-            self.basis,
+            old_cluster_maps,
             old_intermediate_cluster,
         )
         new_groups = build_groups(
-            new_basis,
+            new_cluster_maps,
             new_intermediate_cluster,
         )
 
@@ -539,19 +568,11 @@ class HilbertSpace:
                 "Old and new F-move spectator sectors do not match."
             )
 
-        new_state_vector = np.zeros(
-            len(new_basis.states),
-            dtype=complex,
-        )
         channel_order = (
             Charge.VACUUM,
             Charge.TAU,
         )
-        matrix = (
-            fibonacciConst.F
-            if direction == "right"
-            else fibonacciConst.F_inv
-        )
+        f_plan = []
 
         for key, old_channels in old_groups.items():
             new_channels = new_groups[key]
@@ -564,9 +585,10 @@ class HilbertSpace:
             if len(old_channels) == 1:
                 old_index = next(iter(old_channels.values()))
                 new_index = next(iter(new_channels.values()))
-                new_state_vector[new_index] = (
-                    self.state_vector[old_index]
-                )
+                f_plan.append((
+                    (old_index,),
+                    (new_index,),
+                ))
                 continue
 
             if (
@@ -577,16 +599,66 @@ class HilbertSpace:
                     "Unsupported multi-channel F-move sector."
                 )
 
+            f_plan.append((
+                tuple(
+                    old_channels[channel]
+                    for channel in channel_order
+                ),
+                tuple(
+                    new_channels[channel]
+                    for channel in channel_order
+                ),
+            ))
+
+        return tuple(f_plan)
+
+    def state_vector_after_f(
+        self,
+        new_basis: FusionBasis,
+        old_intermediate_cluster: frozenset,
+        new_intermediate_cluster: frozenset,
+        direction: str,
+        old_cluster_maps: tuple[dict, ...] | None = None,
+        new_cluster_maps: tuple[dict, ...] | None = None,
+        f_plan: tuple | None = None,
+    ) -> np.ndarray:
+        """Return the statevector transformed into an F-related basis."""
+
+        if f_plan is None:
+            f_plan = self.build_f_plan(
+                new_basis=new_basis,
+                old_intermediate_cluster=old_intermediate_cluster,
+                new_intermediate_cluster=new_intermediate_cluster,
+                direction=direction,
+                old_cluster_maps=old_cluster_maps,
+                new_cluster_maps=new_cluster_maps,
+            )
+
+        new_state_vector = np.zeros(
+            len(new_basis.states),
+            dtype=complex,
+        )
+        matrix = (
+            fibonacciConst.F
+            if direction == "right"
+            else fibonacciConst.F_inv
+        )
+
+        for old_indices, new_indices in f_plan:
+            if len(old_indices) == 1:
+                new_state_vector[new_indices[0]] = (
+                    self.state_vector[old_indices[0]]
+                )
+                continue
+
             old_local_vector = np.array([
-                self.state_vector[old_channels[channel]]
-                for channel in channel_order
+                self.state_vector[index]
+                for index in old_indices
             ], dtype=complex)
             new_local_vector = matrix @ old_local_vector
 
-            for row, channel in enumerate(channel_order):
-                new_state_vector[
-                    new_channels[channel]
-                ] = new_local_vector[row]
+            for row, new_index in enumerate(new_indices):
+                new_state_vector[new_index] = new_local_vector[row]
 
         return new_state_vector
 

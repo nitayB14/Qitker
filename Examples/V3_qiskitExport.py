@@ -36,7 +36,7 @@ def main():
     """qiskit operations on circuit"""
     qc.draw('mpl')
 
-    qc.measure([0], [0])
+    qc.measure(*(party.getMeasuredLists()))
 
     simulation = Aer.get_backend('qasm_simulator')
     transpiled_qc = transpile(qc, simulation)

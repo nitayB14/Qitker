@@ -4,13 +4,10 @@
     "\\Examples",
     "\\qitker",
     "\\qitker\\anyons",
-    "\\qitker\\compiler",
-    "\\qitker\\compiler\\reporter",
-    "\\qitker\\parser",
     "\\qitker\\QuantumMath",
     "\\version_testing",
     "\\version_testing\\Backend"
   ],
-  "SelectedNode": "\\version_testing\\Backend\\T19_performance_baseline.py",
+  "SelectedNode": "\\version_testing\\Backend\\T20_cache_behavior.py",
   "PreviewInSolutionExplorer": false
 }
