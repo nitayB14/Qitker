@@ -1,13 +1,11 @@
 {
   "ExpandedNodes": [
     "",
-    "\\Braids_search",
-    "\\Examples",
-    "\\qitker\\compiler",
-    "\\qitker\\compiler\\reporter",
-    "\\version_testing",
-    "\\version_testing\\Backend\\T19"
+    "\\qitker",
+    "\\qitker\\parser",
+    "\\qitker\\QuantumMath",
+    "\\version_testing"
   ],
-  "SelectedNode": "\\Braids_search\\two_controllers_braid_search.py",
+  "SelectedNode": "\\qitker\\parser\\execution.py",
   "PreviewInSolutionExplorer": false
 }

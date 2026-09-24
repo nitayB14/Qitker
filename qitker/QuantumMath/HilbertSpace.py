@@ -332,7 +332,8 @@ class HilbertSpace:
 
         if gate_name not in fibonacciConst.GATE_MATRICES:
             raise ValueError(
-                f"Unsupported gate: {gate_name}"
+                f"{gate_name} is not supported by the Qitker V1 backend. "
+                "Export the circuit to use another backend."
             )
 
         return fibonacciConst.GATE_MATRICES[gate_name]

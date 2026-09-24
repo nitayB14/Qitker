@@ -48,9 +48,26 @@ class execution:
         
         op = self._circuit.getOperationVector()
 
-        for i in op:
-            self._fusionSystem.addOperationToIdealMatrix(i)
-            self.applyGate(i) #apply each gate appear in operation vector
+        for operation in op:
+            controllers = (
+                tuple(operation.getControllers())
+                if hasattr(operation, "getControllers")
+                else ()
+            )
+
+            if len(controllers) > 2:
+                gate_name = (
+                    ("C" * len(controllers))
+                    + operation.getName().upper()
+                )
+
+                raise NotImplementedError(
+                    f"{gate_name} exceeds Qitker V1's 3-qubit gate limit. "
+                    "Export the circuit to use another backend."
+                )
+
+            self._fusionSystem.addOperationToIdealMatrix(operation)
+            self.applyGate(operation)
 
 
     
