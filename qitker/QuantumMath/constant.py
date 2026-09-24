@@ -4,10 +4,15 @@ class math_constant():
     
     phi = (1 + np.sqrt(5)) / 2
 
+    R_VACUUM = np.exp(-4j * np.pi / 5)
+    R_TAU = np.exp(3j * np.pi / 5)
+
     R = np.array([
-        [np.exp(-4j*np.pi/5), 0],
-        [0, np.exp(3j*np.pi/5)]
+        [R_VACUUM, 0],
+        [0, R_TAU]
+
     ], dtype=complex)
+
 
     F = np.array([
         [1/phi, 1/np.sqrt(phi)],

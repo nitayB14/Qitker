@@ -14,6 +14,15 @@ from qitker.compiler import validation
 op = operation.operation() #class operation - to add operations to qubit
 
 
+class EqualityCondition:
+    def __init__(self, left, right):
+        self.left = left
+        self.right = right
+
+    def __bool__(self):
+        return self.left is self.right
+
+
 class qubit:
     """
     Represents single qubit
@@ -52,6 +61,8 @@ class qubit:
     def isToMeasure(self):
         return self._measured
 
+    def getValue(self):
+        return self._quantumCircuit.getSelectedValue(self)
 
     """
     Apply gate on qubit
@@ -72,6 +83,10 @@ class qubit:
 
     def superPosition(self):
         self.H()
+
+    def mix(self):
+        self.H()
+
     ##############################################
     """ Call operation class to add X gate to circuit """
     def X(self):
@@ -123,28 +138,7 @@ class qubit:
     def quarterPhase(self):
         self.T()
     ##############################################
-    """ Call operation class to add T gate to circuit """
-    def rotateX(self, angle):
-        op.apply_rotate_X(self, angle=angle, circuit=self._quantumCircuit)
 
-    def RX(self, angle):
-        op.apply_rotate_X(self, angle=angle, circuit=self._quantumCircuit)
-
-    ################################################################
-    def rotateY(self, angle):
-        op.apply_rotate_Y(self, angle=angle, circuit=self._quantumCircuit)
-
-    def RY(self, angle):
-        op.apply_rotate_Y(self, angle=angle, circuit=self._quantumCircuit)
-
-    ################################################################
-    def rotateZ(self, angle):
-        op.apply_rotate_Z(self, angle=angle, circuit=self._quantumCircuit)
-
-    def RZ(self, angle):
-        op.apply_rotate_Z(self, angle=angle, circuit=self._quantumCircuit)
-
-    ################################################################
 
 
 
@@ -155,7 +149,14 @@ class qubit:
 
     def _checkItems(self, control, where):
         from qitker.compiler.qRegister import qRegister
+        if isinstance(control, EqualityCondition):
+            if where is not None:
+                raise TypeError(
+                    "where cannot be used together with an equality condition"
+                )
 
+            control, where = control.left, control.right
+        
         if isinstance(control, qRegister):
             control = control[::]
         if isinstance(where, qRegister):
@@ -318,7 +319,27 @@ class qubit:
     def CT(self, control):
         self.quarterPhaseIf(control)
     #################################################################
+    def rotateX(self, angle):
+        op.apply_rotate_X(self, angle=angle, circuit=self._quantumCircuit)
 
+    def RX(self, angle):
+        op.apply_rotate_X(self, angle=angle, circuit=self._quantumCircuit)
+
+    ################################################################
+    def rotateY(self, angle):
+        op.apply_rotate_Y(self, angle=angle, circuit=self._quantumCircuit)
+
+    def RY(self, angle):
+        op.apply_rotate_Y(self, angle=angle, circuit=self._quantumCircuit)
+
+    ################################################################
+    def rotateZ(self, angle):
+        op.apply_rotate_Z(self, angle=angle, circuit=self._quantumCircuit)
+
+    def RZ(self, angle):
+        op.apply_rotate_Z(self, angle=angle, circuit=self._quantumCircuit)
+
+    ################################################################
     def rotateXif(self, control, angle=0, where=None):
         control, where = self._checkItems(control, where)
         self._controlledRotateGate(control, angle, "RX", where)
@@ -332,6 +353,7 @@ class qubit:
         self._controlledRotateGate(control, angle, "RZ", where)
 
     #################################################################
+
     def _controlledRotateGate(self, control, angle, oType, where=None):
         comparison_requested = isinstance(where, (qubit, list))
 
@@ -433,7 +455,15 @@ class qubit:
         self.flipIf(control)
 
     #################################################################
-    
+    def __eq__(self, other):
+        if not isinstance(other, qubit):
+            return NotImplemented
+
+        return EqualityCondition(self, other)
+
+    __hash__ = object.__hash__
+
+
     def __str__(self):
         return f"index: {self._quantumCircuit.getIndex(self)}, is to measure?: {self._measured}"
 

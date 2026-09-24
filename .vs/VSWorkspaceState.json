@@ -3,9 +3,8 @@
     "",
     "\\Examples",
     "\\qitker",
-    "\\qitker\\compiler",
-    "\\qitker\\ExportCode"
+    "\\qitker\\compiler"
   ],
-  "SelectedNode": "\\Examples\\V0_run.py",
+  "SelectedNode": "\\Examples\\V5_groverSimple.py",
   "PreviewInSolutionExplorer": false
 }

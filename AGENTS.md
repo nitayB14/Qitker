@@ -2,45 +2,110 @@
 
 This repository contains Qitker, a quantum computing project.
 
-For the current stage of development, focus only on understanding and analyzing the frontend and export layers of the project.
+Qitker v1 frontend is considered complete.
 
-Do not work on the backend execution layer unless the user explicitly asks for it.
+The current primary development focus is the Fibonacci-anyon backend,
+especially leakage analysis, cross-qubit braiding, and multi-qubit gates.
 
+The frontend and export layers should now be treated as stable unless the user
+explicitly asks to modify or extend them.
 
-# Read-only mode
+The backend may be freely inspected, analyzed, tested conceptually, and discussed.
 
-Unless the user explicitly requests otherwise:
+However, NO repository file may be modified without explicit user approval.
 
-- Do NOT modify any file.
-- Do NOT create new files.
+# STRICT READ-ONLY DEFAULT
+
+The repository is READ-ONLY by default.
+
+You may inspect files, trace execution, analyze architecture, reason about the
+physics and mathematics, identify bugs, propose algorithms, suggest code changes,
+and design tests.
+
+You MUST NOT modify the repository unless the user explicitly authorizes a
+specific modification.
+
+This includes:
+
+- Do NOT edit existing files.
+- Do NOT create files.
 - Do NOT delete files.
+- Do NOT rename or move files.
+- Do NOT automatically fix bugs.
+- Do NOT apply patches.
 - Do NOT refactor code.
-- Do NOT run commands that change the repository.
-- Do NOT automatically implement suggested changes.
+- Do NOT change tests.
+- Do NOT change documentation.
+- Do NOT run formatting tools that modify files.
+- Do NOT run commands that may modify repository state.
+- Do NOT commit changes.
 
-Your role is currently analysis, discussion, planning, and code review only.
+A request to:
+- analyze
+- inspect
+- review
+- explain
+- debug
+- investigate
+- find the problem
+- propose a solution
+- design an implementation
 
-You may explain what should be changed and suggest code, but wait for the user before making any modification.
+is NOT permission to modify files.
+
+Permission must be explicit.
+
+Examples of valid permission:
+
+"Implement this."
+"Change this file."
+"Fix this bug."
+"Add this test."
+"Edit x"
 
 
-# Current scope
+If permission is ambiguous, remain READ-ONLY and ask the user before modifying anything.
 
-For now, focus on the files related to the frontend and export system.
+# Backend investigation workflow
 
-The main relevant areas include:
+When investigating a backend problem:
 
-- qitker/compiler/circuit.py
-- qitker/compiler/qubit.py
-- qitker/compiler/operation.py
-- qitker/compiler/reporter/
-- ExportCode/exportCode.py
+1. Inspect the existing implementation first.
+2. Trace the relevant execution path.
+3. Identify the mathematical / physical model being used.
+4. Separate implementation bugs from physics / mathematical questions.
+5. Reuse existing abstractions before proposing new ones.
+6. Identify the smallest component that blocks progress.
+7. Report findings to the user.
+8. Propose the smallest next step.
+9. Wait for explicit approval before modifying anything.
 
-You may inspect additional files when required to understand dependencies between these components.
+Do not start by writing code.
 
-However, avoid analyzing or changing the backend execution system unless it is necessary to understand the frontend interface.
+For physics-heavy problems such as leakage, fusion spaces, F-moves,
+R-moves, or cross-qubit braiding, first establish the mathematical model
+and basis being used by the existing implementation.
 
-The backend layer currently begins around the execution/parser layer and is outside the current development scope.
+Do not hide uncertainty behind code.
 
+If the mathematics is unresolved, say so and investigate the mathematics
+before proposing an implementation.
+
+# Efficiency
+
+Keep investigations focused.
+
+Do not scan or analyze the entire repository when the problem is localized.
+
+Start from the files and classes directly involved in the current question,
+then follow dependencies only when necessary.
+
+Prefer understanding the existing execution path over proposing a new architecture.
+
+Do not repeat analysis that has already been established during the current task.
+
+When enough information exists to answer the user's question, stop investigating
+and report the result.
 
 # Development approach
 
@@ -57,74 +122,112 @@ Before suggesting a change:
 5. Only implement it if the user explicitly asks you to.
 
 
-# Current development goals
+# Current development status
 
-The current major goal is to design and implement the `where` condition system used by `flipIf`.
+Qitker v1 frontend is now considered complete.
 
-`flipIf` already exists as a frontend operation. The purpose of `where` is to extend it so the user can describe more complex control conditions at a high level, without manually constructing the required lower-level quantum gates.
+The frontend architecture, including the high-level qubit/register interface,
+conditional operations, rotations, and export layer, has reached the required
+scope for version 1.
 
-The `where` system should:
+Only final testing, edge-case validation, documentation, and small fixes should
+be performed on the frontend.
 
-- define which states of the control qubit or register should activate the target operation
-- remain part of the frontend abstraction
-- allow Qitker to translate high-level conditions into the required lower-level controlled gate operations
-- be designed so additional condition types can be added later without rewriting the core `flipIf` architecture
+Do NOT add new frontend features unless the user explicitly decides that they
+are required.
 
-The main focus at this stage is the design of the `where` API, its accepted input types, and how each condition should be translated internally.
-
-The exact supported behaviors are still being defined.
-
-Do not assume behavior that has not been explicitly specified.
-Do not implement additional condition types unless they are defined by the user.
-When a case is ambiguous, discuss the intended behavior with the user before making architectural changes.
-
-Examples and expected behaviors will be defined below:
-
-# Expected behavior
-
-ancilla.flipIf(bob)
-# Existing behavior.
-# Flip ancilla if bob is in state |1>.
-
-ancilla.flipIf(bob, where='0')
-# Flip ancilla if bob is in state |0>.
-
-ancilla.flipIf(bob, where='1')
-# Flip ancilla if bob is in state |1>.
-
-ancilla.flipIf(bob, where='x')
-# Ignore bob as a condition.
-# 'x' means "don't care".
-
-ancilla.flipIf(bob, where=dan)
-# Use another qubit as the condition reference.
-# Exact semantics should follow the behavior defined by the user during implementation.
-
-ancilla.flipIf([bob, dan, alice], where="1x0")
-# Multi-qubit condition.
-# bob must be |1>.
-# dan is ignored.
-# alice must be |0>.
-
-ancilla.flipIf([bob, dan, alice], where=4)
-# Numeric condition for the supplied control qubits.
-# Exact integer-to-bitstring interpretation should be defined explicitly before implementation.
-
-# For the current architecture, these cases are sufficient.
-# Do not add additional `where` forms yet.
+The main development focus now moves to the anyonic backend.
 
 
-# Future goal: qRegister
+# Current backend status
 
-After the initial `flipIf` functionality is designed, a new `qRegister` class is planned.
+The Qitker backend is based on Fibonacci anyons and currently supports
+single-qubit execution.
 
-For now, only remember this architectural direction.
+Single-qubit gates can already be represented and executed through the anyonic
+backend using the existing F-move and R-move machinery.
 
-Do NOT implement `qRegister` unless the user explicitly asks to begin working on it.
+The next major milestone is multi-qubit execution.
 
-The intended purpose of `qRegister` is to represent and manage groups of qubits as a higher-level frontend object.
+However, multi-qubit gates should NOT be implemented immediately without first
+understanding and handling leakage correctly.
 
-Its exact API and behavior will be designed later together with the user.
+
+# Backend development order
+
+The current backend work should proceed in the following order:
+
+1. Leakage
+
+   Understand how computational states and leakage states behave when operations
+   begin interacting across logical qubit boundaries.
+
+   Before implementing two-qubit gates, determine how leakage is represented,
+   detected, measured, and handled by the current Hilbert-space / fusion-tree
+   architecture.
+
+2. Cross-qubit braiding / sigma operations
+
+   After leakage is understood, implement the ability to perform braids between
+   anyons belonging to different logical qubits.
+
+   A key example is sigma_4 in an 8-anyon / two-logical-qubit system:
+   the braid exchanging the boundary anyons between the two logical qubits.
+
+   This requires understanding how the fusion tree must be transformed using
+   F-moves so that the relevant anyons can become braidable, applying the
+   appropriate R-move, and then transforming the tree back correctly.
+
+3. Two-qubit gates
+
+   Once cross-qubit braiding works correctly and leakage behavior is understood,
+   begin constructing and validating two-qubit logical gates.
+
+4. Multi-controlled gates
+
+   Extend the backend from two-qubit interactions toward the controlled gates
+   required by the Qitker frontend.
+
+
+# Version 1 backend target
+
+The goal of Qitker v1 is NOT to support arbitrarily large controlled gates.
+
+The maximum required controlled-gate scope for version 1 is:
+
+- CX / CY / CZ / CS / CT
+- CCX
+- CCY
+- CCZ
+- CCS
+- CCT
+
+Supporting gates with more than two control qubits is outside the required
+scope of version 1.
+
+If a general automatic method for constructing larger controlled gates emerges
+naturally from the backend architecture, it may be considered later, but it
+should not delay completion of version 1.
+
+
+# Current priority
+
+The immediate priority is therefore:
+
+LEAKAGE
+    ↓
+CROSS-QUBIT BRAIDING (for example sigma_4)
+    ↓
+TWO-QUBIT LOGICAL GATES
+    ↓
+CCX / CCY / CCZ / CCS / CCT
+    ↓
+BACKEND V1 COMPLETE
+
+Do not expand the scope beyond this unless the user explicitly decides to do so.
+
+The objective is to finish a stable and understandable version 1 backend,
+not to solve every possible multi-qubit gate construction problem.
 
 
 # Architecture principle
@@ -135,7 +238,7 @@ The user should primarily interact with objects such as:
 
 - circuit
 - qubit
-- future qRegister objects
+- qRegister 
 
 The frontend should hide unnecessary index management and low-level circuit construction whenever possible.
 

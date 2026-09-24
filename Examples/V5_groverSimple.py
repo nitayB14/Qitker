@@ -76,9 +76,7 @@ def parseToQiskit(circuit):
     """qiskit operations on circuit"""
     qc.draw('mpl')
 
-    x,y = circuit.getMeasuredLists()
-
-    qc.measure(x, y)
+    qc.measure(*(circuit.getMeasuredLists()))
 
     simulation = Aer.get_backend('qasm_simulator')
     transpiled_qc = transpile(qc, simulation)

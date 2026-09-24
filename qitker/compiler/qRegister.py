@@ -9,7 +9,7 @@
 #
 from qitker.compiler.operations import operation
 from qitker.compiler import circuit
-from qitker.compiler.qubit import qubit
+from qitker.compiler.qubit import qubit, EqualityCondition
 
 op = operation.operation() #class operation - to add operations to qubit
 
@@ -99,6 +99,16 @@ class qRegister:
     def getIndex(self):
         return [i.getIndex() for i in self._reg]
 
+    def getBitstring(self):
+        return "".join(
+            str(regQubit.getValue())
+            for regQubit in self._reg
+        )
+
+    def getValue(self):
+        return int(self.getBitstring(), 2)
+
+
     def isToMeasure(self):
         return [i.isToMeasure() for i in self._reg]
 
@@ -124,6 +134,9 @@ class qRegister:
         self.H()
 
     def superPosition(self):
+        self.H()
+
+    def mix(self):
         self.H()
     ##############################################
     """ Call every qubit in the register and apply X gate """
@@ -312,6 +325,7 @@ class qRegister:
     def rotateZif(self,control, angle, where=None, ancilla=None):
         self._controlledRotateGate(control, angle, "RZ", where, ancilla)
     
+    ########################################################################
 
     def _controlledRotateGate(self, control, angle, opType, where=None, ancilla=None):
         if isinstance(ancilla, qubit):
@@ -351,6 +365,14 @@ class qRegister:
         return self._reg[key]
 
     ################################################################
+    def __eq__(self, other):
+        if not isinstance(other, (qRegister, str, int)):
+            return NotImplemented
+
+        return EqualityCondition(self, other)
+
+    __hash__ = object.__hash__
+
     def __str__(self):
         info = ""
         for i in self._reg:

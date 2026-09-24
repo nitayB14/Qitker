@@ -14,6 +14,7 @@ from qitker.compiler.reporter.reporterObject import reporterObject
 from qitker.ExportCode.exportCode import export_to
 from qitker.compiler.operations.operation import operation
 from qitker.compiler.operations.opClasses import opType
+import time
 
 
 class circuit:
@@ -40,6 +41,9 @@ class circuit:
         self._qubitsNumber = 0
         self._ex = None
         
+        self._lastMeasurement = None
+        self._selectedOutcome = None
+        self._selectedValues = {}
     
     def addQubit(self, qubit):
         """
@@ -53,6 +57,10 @@ class circuit:
             - None
         """
         
+        self._lastMeasurement = None
+        self._selectedOutcome = None
+        self._selectedValues = {}
+
         self._qubitsNumber += 1
         self._qubitsArray.append(qubit)
     
@@ -112,7 +120,10 @@ class circuit:
         Returns:
             - None
         """
-        
+        self._lastMeasurement = None
+        self._selectedOutcome = None
+        self._selectedValues = {}
+
         self._operationVector = np.append(self._operationVector, op)
     
 
@@ -158,20 +169,22 @@ class circuit:
         print("\n[Circuit]")
         print("----------------------------------------------")
         print(f"Qubits:             : {self._qubitsNumber}\n")
-        print(self.getCircuitDraw())
+        print(self.draw())
         
     def barrier(self):
         operation().apply_barrier(self)
 
 
 
-    def getCircuitDraw(self):
+    def draw(self):
         """
         Return a text representation of the circuit.
         """
 
         if self._qubitsNumber == 0:
-            return ""
+            print("")
+            return
+
 
         labels = []
 
@@ -243,7 +256,8 @@ class circuit:
                         )
                     else:
                         rows[qubitIndex] += "─" * cellWidth
-        return "\n".join(rows)
+        print("\n".join(rows))
+        return
 
 
 
@@ -262,33 +276,55 @@ class circuit:
         if len(self._qubitsArray) == 0:
             raise TypeError("cannot execute algorithm without qubits")
 
-        if len(self._operationVector) == 0:
-            raise TypeError("cannot execute algorithm without gates")
+        #if len(self._operationVector) == 0:
+        #    raise TypeError("cannot execute algorithm without gates")
         
         self._ex = execution.execution(self)
         self._ex.convert()
 
 
-    def getAnyonMove(self, anyonMoveList):
-        """
-        Printing how anyons move 
 
-        Args:
-            - anyonMoveList (List):
-                list of anyon places
+    def getSelectedValue(self, currentQubit):
+        if self._lastMeasurement is None:
+            raise RuntimeError("The circuit has not been measured yet.")
 
-        Returns:
-            - None
-        """
-        anyonMove = ""
-        for i in anyonMoveList:
-            for vecId, operation in enumerate(i):
-                anyonMove += (f"[{vecId:05d}]:    {operation}\n")
+        if self._selectedOutcome is None:
+            raise RuntimeError(
+                "No measurement outcome has been selected."
+            )
 
-        return anyonMove
+        if not currentQubit.isToMeasure():
+            raise ValueError(
+                "This qubit was not included in the measurement."
+            )
+
+        return self._selectedValues[currentQubit]
 
 
-    def measure(self, shots=1024, debug=False):
+    def _selectMeasurementOutcome(self, result, outcome):
+        if result is not self._lastMeasurement:
+            raise RuntimeError(
+                "This measurement result is no longer the current result."
+            )
+
+        measuredQubits = [
+            currentQubit
+            for currentQubit in self._qubitsArray
+            if currentQubit.isToMeasure()
+        ]
+
+        if len(outcome) != len(measuredQubits):
+            raise RuntimeError(
+                "Measurement outcome does not match the measured qubits."
+            )
+
+        self._selectedOutcome = outcome
+        self._selectedValues = {
+            currentQubit: int(bit)
+            for currentQubit, bit in zip(measuredQubits, outcome)
+        }
+
+    def measure(self, shots=1024):
         """
         Responsible to measure circuit and create details as strings
 
@@ -304,41 +340,34 @@ class circuit:
                 The string contains every measure result of circuit
         """
 
-        self.execute()
+        self._lastMeasurement = None
+        self._selectedOutcome = None
+        self._selectedValues = {}
         
+        start = time.perf_counter()
+        self.execute()
         measureOutput = self._ex.measure(shots)
+        end = time.perf_counter()
+
+        
         filteredOutput = self.filtered(measureOutput)
         
 
         obj = reporterObject(self._ex._fusionSystem.get_operation_history(),
-                             self._ex._fusionSystem.hilbertSpace.get_unitary(),
                              len(self._operationVector),
                              self._ex._braidsNumber,
                              shots,
                              self._ex.getFidelity(),
-                             filteredOutput)
+                             filteredOutput,
+                             self._ex._fusionSystem.hilbertSpace.get_state_vector(),
+                             self._ex.getLeakageProbability(),
+                             end-start,
+                             self,)
         
+        self._lastMeasurement = obj
+
         return obj
 
-        """
-        print(f"ss:   {self.ex.measure(shots)}")
-        if debug: #in debug mode the function print matrix and anyon move 
-            print("[Debug]\n----------------------------------------------")
-            circuitReporter.printAnyonMove(self.ex.getMoveList())
-            circuitReporter.printFinalMatrix(self.ex)
-        
-        compilation = "\n[Compilation]\n----------------------------------------------\n"
-        compilation += circuitReporter.getTotalGates(self)
-        compilation += circuitReporter.getTotalBraids(self.ex)
-        compilation += f"Shots number:       : {shots}\n"
-        compilation += circuitReporter.getFidelity(self.ex)
-
-
-        resultsReport = "\n[Results]\n----------------------------------------------\n"
-        resultsReport += circuitReporter.getPercentage(self.ex.measure(shots))
-        
-        return compilation, resultsReport
-        """         
 
 
 
@@ -350,6 +379,12 @@ class circuit:
             raise ValueError("Cannot measure circuit: no qubits are marked for measurement.")
 
         for bitstring, count in measureOutput.items():
+            if bitstring == "LEAKAGE":
+                filteredOutput["LEAKAGE"] = (
+                    filteredOutput.get("LEAKAGE", 0) + count
+                )
+                continue
+
             filteredBitstring = "".join(
                 bitstring[index]
                 for index in measuredIndexes

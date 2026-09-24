@@ -33,16 +33,6 @@ class FusionTree:
 
 
 
-    def get_anyon(self, anyon_id):
-        """
-        Returns the anyon object matching the given ID
-        """
-        stractureFlat = self.flatten()
-
-        for anyon in stractureFlat:
-            if anyon_id == anyon.get_id():
-                return anyon
-        return None
     #############################################################
 
 
@@ -178,23 +168,13 @@ class FusionTree:
         return self.get_node_at_path(parent_path)
 
 
-
-
-    def RMove(self, first_id, second_id):
-        self._swap_siblings(first_id, second_id)
-
-
-    def undoRMove(self, first_id, second_id):
-        self._swap_siblings(first_id, second_id)
-
-
     def _swap_siblings(self, first_id, second_id):
         if not self.is_siblings(first_id, second_id):
-            """
+            
             raise ValueError(
                 f"Anyons {first_id} and {second_id} "
                 "are not direct siblings."
-            )"""
+            )
 
         first_path = self.find_path(first_id)
         parent_path = first_path[:-1]
@@ -324,18 +304,6 @@ class FusionTree:
             c
         )
 
-    def undoFMove(self, path, direction):
-        """
-        Reverses an F-move previously applied in the given direction.
-        """
-
-        inverse_direction = (
-            "left"
-            if direction == "right"
-            else "right"
-        )
-
-        self.FMove(path, inverse_direction)
 
 
 
@@ -365,45 +333,3 @@ class FusionTree:
 
 
 
-    """
-        def flatten(self, obj):
-        
-        Converts a nested fusion tree into a flat list of anyons.
-        
-        result = []
-
-        if isinstance(obj, tuple):
-            for item in obj:
-                result.extend(self.flatten(item))
-        else:
-            result.append(obj)
-
-        return result
-    """
-
-    
-    """
-    def fibonacci_are_siblings(self, my_tuple, anyon1, anyon2):
-        
-        Recursively searches the fusion tree to determine if two anyons are siblings.
-        
-
-        validate = False
-        count = 0
-
-        if(anyon1 == anyon2):
-            return False
-
-        for item in my_tuple:
-            if isinstance(item, tuple):
-                validate = self.fibonacci_are_siblings(item, anyon1, anyon2)
-            else:
-                if item.get_id() == anyon1 or item.get_id() == anyon2:
-                    count += 1
-            
-            if count == 2 or validate:
-                return True
-
-        return validate
-    """
-   
