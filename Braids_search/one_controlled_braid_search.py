@@ -1,6 +1,6 @@
 """Known-seed controlled braids and fidelity-driven weave generation.
 
-Carnahan, Zeuch & Bonesteel, PRA 93, 052328 (2016), Secs. III/V,
+Carnahan, Zeuch & Bonesteel, PRA 93, 052328 (2016), Secs. III--V,
 Figs. 2/5/6: https://arxiv.org/abs/1511.00719
 
 Qubit 0 controls qubit 1. In the original controlled-R^2 experiment the
@@ -13,10 +13,11 @@ All words are chronological, with signed, one-based positional indices.
 F tokens below are basis changes used to derive a weave, not physical gates.
 generate_exchange_weave(fidelity=99.99) selects a diagonal exchange weave.
 generate_offdiagonal_weave(fidelity=99.99) selects a returning phase weave
-whose matrix approaches an off-diagonal unitary, using FR^2F and Eq. (22).
+whose matrix approaches an off-diagonal unitary, using FR^2F and a custom
+sign-modified recurrence.
 generate_controlled_weave(fidelity=99.99) inserts the control pair into the
-target using the FOUR-anyon construction, Eqs. (20)--(21), applies that
-phase weave, then extracts it. Its target is a controlled pi rotation,
+target using a four-anyon construction, applies that phase weave, then
+extracts it. Its target is a controlled pi rotation,
 locally equivalent to each controlled Pauli gate.
 
 generate_controlled_pauli(gate, fidelity=99.99) compiles the required local
@@ -30,7 +31,8 @@ verified CX braids and locally compiled half-angle phase rotations, then scores
 the complete physical sequence against the requested controlled phase gate.
 
 Fidelity arguments and reported average gate fidelities are percentages.
-Leakage values are probabilities. Results stay in memory; no files are saved.
+Leakage values are probabilities. The generation helpers return results in
+memory; ``main`` saves verified controlled gates in braid_sequences_SK.json.
 """
 
 import sys
@@ -189,7 +191,7 @@ def build_exchange_weave(iterations=2):
 
 
 def build_offdiagonal_weave(iterations=1):
-    """Use the phase seed FR^2F and Eq. (22) to approach a pi rotation.
+    """Use the phase seed FR^2F and a custom recurrence to approach a pi rotation.
 
     Eq. (22), in CHRONOLOGICAL order, is
     U, R, U^-1, R^-3, U, R^3, U^-1, R^-1, U.
@@ -310,7 +312,7 @@ def build_controlled_r2(iterations=2):
 
 
 def build_controlled_offdiagonal(exchange_iterations=1, offdiagonal_iterations=1):
-    """Use Xu-Wan insertion, middle weave, and extraction (Eqs. (20)--(22)).
+    """Use four-anyon insertion, a middle weave, and extraction.
 
     Reflect the paper's layout so q[0] remains the control. The insertion
     moves (3,4) through objects [(1,2), (3,4), 5], yielding the order
@@ -383,6 +385,10 @@ def _evaluate_controlled(engine, sequence, target):
         "process_fidelity": float(100 * abs(overlap) ** 2 / 16),
         "average_gate_fidelity": _average_gate_fidelity(logical, target),
         "leakage_by_input": dict(zip(engine.logical_labels, map(float, np.diag(loss).real))),
+        "average_leakage": max(
+            0.0,
+            float(np.trace(loss).real / len(engine.logical_labels)),
+        ),
         "maximum_leakage": max(0.0, float(np.linalg.eigvalsh(loss)[-1])),
         "final_anyon_order": final_order,
         "order_restored": final_order == engine.initial_order,
@@ -929,18 +935,30 @@ def searchControlledGate(gate="X", controls=(0,), target=1, fidelity=99.999,
     return result
 
 
+def _save_controlled_gate(gate, candidate):
+    """Save one verified controlled gate beside the single-qubit SK gates."""
+    import solovay_kitaev as sk
+
+    gate_key = f"C{_normalize_controlled_gate(gate)}"
+    seed_record = {
+        "type": "controlled_qubit",
+        "basis": "fibonacci_8_anyons",
+    }
+    sk._save_search_result(gate_key, seed_record, candidate)
+
+
 def main():
-    #for gate in ("X", "Y", "Z", "S", "T"):
-    for gate in ("S", "T"):
+    for gate in ("X", "Y", "Z", "S", "T"):
         print(f"start searching C{gate} braiding")
         start = time.perf_counter()
-        searchControlledGate(
+        candidate = searchControlledGate(
             gate=gate,
             controls=(0,),
             target=1,
             fidelity=99.99,
             max_leakage=None,
         )
+        _save_controlled_gate(gate, candidate)
         end = time.perf_counter()
         print(f"Runtime: {end - start:.6f} seconds")
 

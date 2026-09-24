@@ -4,29 +4,28 @@
 import sys
 from pathlib import Path
 
-from numpy import diff
+from numpy import diff, where
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from qitker import circuit, qubit, qRegister
 
 
-def oracle(q1, q2):
-    q2.phaseIf(q1)
+def oracle(marker, q1, q2):
+    marker.halfPhaseIf([q1, q2])
 
-def diffuser(q1, q2):
-    q1.mix()
-    q2.mix()
+def diffuser(search):
+    """Grover diffuser over the four search qubits."""
 
-    q1.flip()
-    q2.flip()
+    for current_qubit in search:
+        current_qubit.superPosition()
+        current_qubit.flip()
 
-    q2.phaseIf(q1)
+    # Apply a phase when all four transformed qubits are 1.
+    search[-1].halfPhaseIf(search[:-1])
 
-    q2.flip()
-    q1.flip()
-
-    q2.mix()
-    q1.mix()
+    for current_qubit in search:
+        current_qubit.flip()
+        current_qubit.superPosition()
 
 
 def main():
@@ -34,13 +33,15 @@ def main():
 
     alice = qubit(party)
     bob = qubit(party)
-    
+    marker = qubit(party, measured=False)
+
     alice.mix()
     bob.mix()
 
+    marker.flip()
 
-    oracle(alice, bob)
-    diffuser(alice, bob)
+    oracle(marker, alice, bob)
+    diffuser([alice, bob])
 
     # Visualize the circuit
     print(party.getCircuitDraw())   

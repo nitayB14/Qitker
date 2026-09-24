@@ -320,6 +320,12 @@ class circuit:
             raise ValueError("Cannot measure circuit: no qubits are marked for measurement.")
 
         for bitstring, count in measureOutput.items():
+            if bitstring == "LEAKAGE":
+                filteredOutput["LEAKAGE"] = (
+                    filteredOutput.get("LEAKAGE", 0) + count
+                )
+                continue
+
             filteredBitstring = "".join(
                 bitstring[index]
                 for index in measuredIndexes

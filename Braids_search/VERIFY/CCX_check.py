@@ -4,7 +4,7 @@ from pathlib import Path
 import numpy as np
 
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
@@ -33,17 +33,14 @@ def main():
     state = circuit.hilbertSpace.state_vector
     indices = circuit.basis.logical_to_physical
 
-    # Target: GHZ = (|000> + |111>) / sqrt(2)
-    amp000 = state[indices["000"]]
-    amp111 = state[indices["111"]]
-
-    ghz_overlap = (amp000 + amp111) / np.sqrt(2)
-    fidelity = abs(ghz_overlap) ** 2
+    # Target state: |111>
+    target_amplitude = state[indices["111"]]
+    fidelity = abs(target_amplitude) ** 2
     leakage = circuit.hilbertSpace.leakage_probability()
 
     print()
     print("=" * 58)
-    print("                 QITKER GHZ STATE TEST")
+    print("                 QITKER CCX STATE TEST")
     print("=" * 58)
 
     
@@ -60,13 +57,8 @@ def main():
         probability = abs(state[indices[label]]) ** 2
         print(f"  |{label}> : {100 * probability:10.6f}%")
 
-    print("\nCoherence:")
-    print(f"  |amp(000)|     : {abs(amp000):.8f}")
-    print(f"  |amp(111)|     : {abs(amp111):.8f}")
-
-    if abs(amp000) > 1e-15 and abs(amp111) > 1e-15:
-        relative_phase = np.angle(amp111 / amp000)
-        print(f"  Relative phase : {relative_phase:+.8f} rad")
+    print("\nTarget state:")
+    print(f"  |amp(111)|     : {abs(target_amplitude):.8f}")
 
     print()
     print("=" * 58)

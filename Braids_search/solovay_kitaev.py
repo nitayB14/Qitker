@@ -17,9 +17,12 @@ from scipy.spatial import cKDTree
 from search_engine import braid_searching
 
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-SEQUENCE_FILE = PROJECT_ROOT / "qitker" / "parser" / "braid_sequences.json"
-SK_SEQUENCE_FILE = PROJECT_ROOT / "qitker" / "parser" / "braid_sequences_sk.json"
+BRAIDS_SEARCH_DIR = Path(__file__).resolve().parent
+
+SEQUENCE_FILE = BRAIDS_SEARCH_DIR / "braid_sequences_primitive.json"
+SK_SEQUENCE_FILE = BRAIDS_SEARCH_DIR / "braid_sequences_SK.json"
+
+
 PAULI_X = np.array([[0, 1], [1, 0]], dtype=complex)
 PAULI_Y = np.array([[0, -1j], [1j, 0]], dtype=complex)
 PAULI_Z = np.array([[1, 0], [0, -1]], dtype=complex)
@@ -335,8 +338,13 @@ def search_better_sequence(
         raise ValueError("Search depths and max_rounds must be non-negative.")
 
     saved_sequences = _load_saved_sequences()
+    single_qubit_sequences = {
+        gate: record
+        for gate, record in saved_sequences.items()
+        if isinstance(record, dict) and record.get("type") == "single_qubit"
+    }
     if gates is None:
-        gates = tuple(saved_sequences)
+        gates = tuple(single_qubit_sequences)
     elif isinstance(gates, str):
         gates = (gates.upper(),)
     else:
@@ -344,14 +352,16 @@ def search_better_sequence(
 
     results = {}
     for gate in gates:
-        if gate not in saved_sequences:
+        if gate not in single_qubit_sequences:
             raise ValueError(f"No saved braid is available for gate {gate!r}.")
         engine = braid_searching(qubits_num=1, gate=gate, target=0)
-        net_words, net_matrices = _build_epsilon_net(engine, net_depth, saved_sequences)
-        mitm_words, mitm_matrices, mitm_tree, mitm_units = _build_macro_mitm_net(
-            engine, mitm_depth, saved_sequences
+        net_words, net_matrices = _build_epsilon_net(
+            engine, net_depth, single_qubit_sequences
         )
-        sequence = _reduce_word(saved_sequences[gate]["sequence"])
+        mitm_words, mitm_matrices, mitm_tree, mitm_units = _build_macro_mitm_net(
+            engine, mitm_depth, single_qubit_sequences
+        )
+        sequence = _reduce_word(single_qubit_sequences[gate]["sequence"])
         best = engine.evaluate(sequence)
         target_matrix = _as_su2(engine.target_matrix)
 
@@ -397,7 +407,7 @@ def search_better_sequence(
         # Save only after physical verification succeeds; checkpoint every gate.
         
         
-        #_save_search_result(gate, saved_sequences[gate], results[gate])
+        _save_search_result(gate, saved_sequences[gate], results[gate])
         print(f"  F/R replay error: {replay_error:.3e}")
         print(f"  saved to: {SK_SEQUENCE_FILE}")
         print(f"  final sequence: {sequence}")

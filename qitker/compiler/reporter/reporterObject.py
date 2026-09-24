@@ -64,9 +64,20 @@ class reporterObject():
 
 	def getPercentage(self):
 		p = ""
-		for key, value in sorted(self._percentage.items(), key=lambda item: int(item[0], 2)):
+
+		def measurement_sort_key(item):
+			key = item[0]
+
+			if key == "LEAKAGE":
+				return (1, 0)
+
+			return (0, int(key, 2))
+
+		for key, value in sorted(self._percentage.items(), key=measurement_sort_key,):
 			percentage = (value / self._shotsNumber) * 100
-			p = p + (f"{key}: {value} shots  ;  {percentage:.2f}%\n")
+			p = p + (
+				f"{key}: {value} shots  ;  {percentage:.2f}%\n"
+			)
 
 		return p
 
