@@ -99,6 +99,16 @@ class qRegister:
     def getIndex(self):
         return [i.getIndex() for i in self._reg]
 
+    def getBitstring(self):
+        return "".join(
+            str(regQubit.getValue())
+            for regQubit in self._reg
+        )
+
+    def getValue(self):
+        return int(self.getBitstring(), 2)
+
+
     def isToMeasure(self):
         return [i.isToMeasure() for i in self._reg]
 

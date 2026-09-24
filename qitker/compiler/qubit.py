@@ -61,6 +61,8 @@ class qubit:
     def isToMeasure(self):
         return self._measured
 
+    def getValue(self):
+        return self._quantumCircuit.getSelectedValue(self)
 
     """
     Apply gate on qubit

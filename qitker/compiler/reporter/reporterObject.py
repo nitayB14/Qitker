@@ -22,7 +22,8 @@ class reporterObject():
     """
 
 	def __init__(self, anyonMove, totalGates, totalBraids,
-			  shotsNumber, outputStateFidelity, percentage, finalStateVector, leakageProbability, executionTime,):
+			  shotsNumber, outputStateFidelity, percentage, finalStateVector,
+			  leakageProbability, executionTime, ownerCircuit,):
 
 		self._anyonMove = anyonMove
 		self._totalGates = totalGates
@@ -33,6 +34,7 @@ class reporterObject():
 		self._finalStateVector = finalStateVector
 		self._leakageProbability = leakageProbability
 		self._executionTime = executionTime
+		self._ownerCircuit = ownerCircuit
 
 
 	def getAnyonMove(self):
@@ -83,6 +85,43 @@ class reporterObject():
 
 
 
+	def getOutcome(self, rank=1):
+		if isinstance(rank, bool) or not isinstance(rank, int):
+			raise TypeError("rank must be an integer.")
+
+		if rank < 1:
+			raise ValueError("rank must be at least 1.")
+
+		rankedOutcomes = [
+			(outcome, shots)
+			for outcome, shots in self._percentage.items()
+			if outcome != "LEAKAGE"
+		]
+
+		rankedOutcomes.sort(
+			key=lambda item: (
+				-item[1],
+				int(item[0], 2),
+			)
+		)
+
+		if rank > len(rankedOutcomes):
+			raise ValueError(
+				"rank is greater than the number of measured outcomes."
+			)
+
+		return rankedOutcomes[rank - 1][0]
+
+
+	def selectResult(self, rank=1):
+		outcome = self.getOutcome(rank)
+
+		self._ownerCircuit._selectMeasurementOutcome(
+			self,
+			outcome,
+		)
+
+		return outcome
 
 	def report(self, debug=False):
 		"""

@@ -41,6 +41,9 @@ class circuit:
         self._qubitsNumber = 0
         self._ex = None
         
+        self._lastMeasurement = None
+        self._selectedOutcome = None
+        self._selectedValues = {}
     
     def addQubit(self, qubit):
         """
@@ -54,6 +57,10 @@ class circuit:
             - None
         """
         
+        self._lastMeasurement = None
+        self._selectedOutcome = None
+        self._selectedValues = {}
+
         self._qubitsNumber += 1
         self._qubitsArray.append(qubit)
     
@@ -113,7 +120,10 @@ class circuit:
         Returns:
             - None
         """
-        
+        self._lastMeasurement = None
+        self._selectedOutcome = None
+        self._selectedValues = {}
+
         self._operationVector = np.append(self._operationVector, op)
     
 
@@ -274,6 +284,46 @@ class circuit:
 
 
 
+    def getSelectedValue(self, currentQubit):
+        if self._lastMeasurement is None:
+            raise RuntimeError("The circuit has not been measured yet.")
+
+        if self._selectedOutcome is None:
+            raise RuntimeError(
+                "No measurement outcome has been selected."
+            )
+
+        if not currentQubit.isToMeasure():
+            raise ValueError(
+                "This qubit was not included in the measurement."
+            )
+
+        return self._selectedValues[currentQubit]
+
+
+    def _selectMeasurementOutcome(self, result, outcome):
+        if result is not self._lastMeasurement:
+            raise RuntimeError(
+                "This measurement result is no longer the current result."
+            )
+
+        measuredQubits = [
+            currentQubit
+            for currentQubit in self._qubitsArray
+            if currentQubit.isToMeasure()
+        ]
+
+        if len(outcome) != len(measuredQubits):
+            raise RuntimeError(
+                "Measurement outcome does not match the measured qubits."
+            )
+
+        self._selectedOutcome = outcome
+        self._selectedValues = {
+            currentQubit: int(bit)
+            for currentQubit, bit in zip(measuredQubits, outcome)
+        }
+
     def measure(self, shots=1024):
         """
         Responsible to measure circuit and create details as strings
@@ -290,7 +340,10 @@ class circuit:
                 The string contains every measure result of circuit
         """
 
-
+        self._lastMeasurement = None
+        self._selectedOutcome = None
+        self._selectedValues = {}
+        
         start = time.perf_counter()
         self.execute()
         measureOutput = self._ex.measure(shots)
@@ -308,8 +361,11 @@ class circuit:
                              filteredOutput,
                              self._ex._fusionSystem.hilbertSpace.get_state_vector(),
                              self._ex.getLeakageProbability(),
-                             end-start,)
+                             end-start,
+                             self,)
         
+        self._lastMeasurement = obj
+
         return obj
 
 

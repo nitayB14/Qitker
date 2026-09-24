@@ -11,41 +11,39 @@ from qitker import circuit, qubit, qRegister
 import math
 
 
-def oracle(q1, q2, marker):
-    marker.halfPhaseIf(q1==q2)
+def oracle(reg, marker):
+    marker.halfPhaseIf(reg[0]==reg[1])
     
 
-def diffuser(q1, q2):
-    q1.mix()
-    q2.mix()
+def diffuser(reg):
+    """Grover diffuser over the four search qubits."""
 
-    q1.flip()
-    q2.flip()
+    for current_qubit in reg:
+        current_qubit.superPosition()
+        current_qubit.flip()
 
-    q2.halfPhaseIf(q1)
+    # Apply a phase when all four transformed qubits are 1.
+    reg[-1].halfPhaseIf(reg[:-1])
 
-    q1.flip()
-    q2.flip()
+    for current_qubit in reg:
+        current_qubit.flip()
+        current_qubit.superPosition()
 
-    q1.mix()
-    q2.mix()
 
 
 
 def main():
     party = circuit()
 
-    alice = qubit(party)
-    bob = qubit(party)
+    reg = qRegister(party, size=2)
     marker = qubit(party, measured=False)
 
-    alice.mix()
-    bob.mix()
+    reg.mix()
 
     marker.flip()
 
-    oracle(alice, bob, marker)
-    diffuser(alice, bob)
+    oracle(reg, marker)
+    diffuser(reg)
 
 
     # Visualize the circuit
@@ -54,5 +52,9 @@ def main():
     # Run on the Fibonacci-anyon backend
     result = party.measure(shots=1024)
     print(result)
+
+    result.selectResult(1)
+
+    print(f"reg: {reg.getBitstring()}") 
 
 main()

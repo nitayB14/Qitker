@@ -1,9 +1,10 @@
 {
   "ExpandedNodes": [
     "",
-    "\\version_testing",
-    "\\version_testing\\Backend"
+    "\\Examples",
+    "\\qitker",
+    "\\qitker\\compiler"
   ],
-  "SelectedNode": "\\version_testing\\Backend\\T21_equality_condition_syntax.py",
+  "SelectedNode": "\\Examples\\V5_groverSimple.py",
   "PreviewInSolutionExplorer": false
 }
