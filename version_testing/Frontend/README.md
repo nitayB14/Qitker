@@ -1,6 +1,6 @@
 # Qitker Frontend Correctness Tests
 
-This directory contains 35 correctness tests for Qitker's frontend, covering everything from qubit and register creation to exporting a complete algorithm to Qiskit.
+This directory contains 36 correctness tests for Qitker's frontend, covering everything from qubit and register creation to exporting a complete algorithm to Qiskit.
 
 The tests use deterministic assertions and statevector or unitary comparisons against Qiskit. They do not depend on shots, plotting, or Qitker's anyonic execution engine.
 
@@ -53,6 +53,9 @@ The tests use deterministic assertions and statevector or unitary comparisons ag
 - `T33_validation_errors.py` - Verifies that invalid controls, comparisons, conditions, and ancillas raise clear exceptions.
 - `T34_qiskit_export_complete.py` - Verifies all currently supported operation families together in one exported Qiskit circuit.
 - `T35_full_grover_register_equality.py` - Runs a complete Grover search with a register-equality oracle and verifies the result, phases, and clean workspace.
+- `T36_equality_operator.py` - Verifies that `==` on qubits and whole registers creates controlled-gate conditions, including register comparisons with bitstring and integer patterns.
+
+Use `==` with `qubit` or whole `qRegister` objects. Register slices and list literals are Python lists; pass them as separate `control` and `where` arguments instead of comparing them with `==`.
 
 ## Shared Helper
 
@@ -66,11 +69,11 @@ Every test can run independently without `pytest`:
 python -B version_testing/Frontend/T1_qubit_creation.py
 ```
 
-Run all 35 tests in numerical order with PowerShell:
+Run all 36 tests in numerical order with PowerShell:
 
 ```powershell
 $tests = Get-ChildItem version_testing/Frontend/T*.py | Sort-Object { [int]([regex]::Match($_.BaseName, '^T(\d+)').Groups[1].Value) }
 foreach ($test in $tests) { python -B $test.FullName; if ($LASTEXITCODE -ne 0) { break } }
 ```
 
-A successful run prints `PASS` from all 35 test files.
+A successful run prints `PASS` from all 36 test files.

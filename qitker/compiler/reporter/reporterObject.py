@@ -25,6 +25,8 @@ class reporterObject():
 			  shotsNumber, outputStateFidelity, percentage, finalStateVector,
 			  leakageProbability, executionTime, ownerCircuit,):
 
+
+		self._anyonsNumber = ownerCircuit.getQubitsNumber() * 4
 		self._anyonMove = anyonMove
 		self._totalGates = totalGates
 		self._totalBraids = totalBraids
@@ -36,6 +38,8 @@ class reporterObject():
 		self._executionTime = executionTime
 		self._ownerCircuit = ownerCircuit
 
+	def getNumberOfAnyons(self):
+		return self._anyonsNumber
 
 	def getAnyonMove(self):
 		return self._anyonMove
@@ -144,12 +148,13 @@ class reporterObject():
 
 
 		reportStr += "\n[Compilation]\n----------------------------------------------\n"
-		reportStr += f"Execution time:                         : {self._executionTime:.2f} s\n"
-		reportStr += "Total gates:                            : " + str(self._totalGates) + '\n'
-		reportStr += "Total braids:                           : " + str(self._totalBraids) + '\n'
-		reportStr += "Shots number:                           : " + str(self._shotsNumber) + '\n'
-		reportStr += "Output state fidelity:                  : " + str(self._outputStateFidelity) + '\n'
-		reportStr += (f"Leakage probability:                    : {self._leakageProbability * 100:.4f}%")
+		reportStr += "Number of anyons:                     : " + str(self._anyonsNumber) + '\n'
+		reportStr += "Total gates:                          : " + str(self._totalGates) + '\n'
+		reportStr += "Total braids:                         : " + str(self._totalBraids) + '\n'
+		reportStr += "Shots number:                         : " + str(self._shotsNumber) + '\n'
+		reportStr += "Output state fidelity:                : " + str(self._outputStateFidelity) + '\n'
+		reportStr += (f"Leakage probability:                  : {self._leakageProbability * 100:.4f}%\n")
+		reportStr += f"Execution time:                       : {self._executionTime:.2f} s"
 		reportStr += "\n\n[Results]\n----------------------------------------------\n"
 		reportStr += str(self.getPercentage()) + '\n'
 		
