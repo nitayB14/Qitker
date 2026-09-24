@@ -5,12 +5,14 @@ Qitker explores quantum computation with Fibonacci anyons. It connects a simple 
 ## Current status
 
 - The version 1 frontend and Qiskit export are implemented and tested.
-- The anyonic backend supports single-qubit execution, leakage analysis, and physical cross-qubit braiding, including sigma4.
-- Multi-qubit logical gates above 3 qubits are still in development.
+- The anyonic backend models computational and leakage states and supports physical cross-qubit braiding.
+- Normal backend execution includes stored braid sequences for CX, CY, CZ, CS, CT, CCX, CCY, CCZ, CCS, and CCT. 
+- Version 1 supports up to two controls per gate; this is not a limit on the total number of qubits in a circuit.
+- The physical backend represents Fibonacci anyons in a fusion-tree basis and tracks both computational and leakage states.
+- It applies physical braids through F and R moves, including braids across qubit boundaries, and reports fidelity and leakage relative to the ideal logical result.
+
 
 ## Quick start
-
-Run from the repository root with Qiskit installed:
 
 ```python
 from qitker import circuit, qubit

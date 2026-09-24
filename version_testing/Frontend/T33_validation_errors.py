@@ -85,9 +85,27 @@ def test_ancilla_validation_errors():
         lambda: targets.flipIf(control, ancilla="workspace"),
     )
 
+def test_export_target_validation_errors():
+    """Reject unsupported export targets with clear exceptions."""
+    circ = circuit()
+    qubit(circ)
+
+    for name in ("cirq", "unknown"):
+        assert_raises(
+            ValueError,
+            "Unsupported export target",
+            lambda name=name: circ.exportCircuit(name),
+        )
+
+    assert_raises(
+        TypeError,
+        "export target must be a string",
+        lambda: circ.exportCircuit(None),
+    )
 
 if __name__ == "__main__":
     test_control_validation_errors()
     test_comparison_validation_errors()
     test_ancilla_validation_errors()
+    test_export_target_validation_errors()
     print("T33_validation_errors: PASS")

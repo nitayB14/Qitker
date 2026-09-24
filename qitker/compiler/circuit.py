@@ -276,8 +276,6 @@ class circuit:
         if len(self._qubitsArray) == 0:
             raise TypeError("cannot execute algorithm without qubits")
 
-        #if len(self._operationVector) == 0:
-        #    raise TypeError("cannot execute algorithm without gates")
         
         self._ex = execution.execution(self)
         self._ex.convert()
@@ -354,7 +352,7 @@ class circuit:
         
 
         obj = reporterObject(self._ex._fusionSystem.get_operation_history(),
-                             len(self._operationVector),
+                             sum(1 for op in self._operationVector if op.getName() != "barrier"),
                              self._ex._braidsNumber,
                              shots,
                              self._ex.getFidelity(),
