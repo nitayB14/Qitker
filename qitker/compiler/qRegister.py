@@ -9,7 +9,7 @@
 #
 from qitker.compiler.operations import operation
 from qitker.compiler import circuit
-from qitker.compiler.qubit import qubit
+from qitker.compiler.qubit import qubit, EqualityCondition
 
 op = operation.operation() #class operation - to add operations to qubit
 
@@ -316,13 +316,6 @@ class qRegister:
         self._controlledRotateGate(control, angle, "RZ", where, ancilla)
     
     ########################################################################
-    def rotate(self, gateName, angle):
-        pass
-
-    def rotateIf(self, gateName, control, angle, where=None, ancilla=None):
-        pass
-
-    #########################################################################
 
     def _controlledRotateGate(self, control, angle, opType, where=None, ancilla=None):
         if isinstance(ancilla, qubit):
@@ -362,6 +355,14 @@ class qRegister:
         return self._reg[key]
 
     ################################################################
+    def __eq__(self, other):
+        if not isinstance(other, (qRegister, str, int)):
+            return NotImplemented
+
+        return EqualityCondition(self, other)
+
+    __hash__ = object.__hash__
+
     def __str__(self):
         info = ""
         for i in self._reg:

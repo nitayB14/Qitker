@@ -14,6 +14,15 @@ from qitker.compiler import validation
 op = operation.operation() #class operation - to add operations to qubit
 
 
+class EqualityCondition:
+    def __init__(self, left, right):
+        self.left = left
+        self.right = right
+
+    def __bool__(self):
+        return self.left is self.right
+
+
 class qubit:
     """
     Represents single qubit
@@ -138,7 +147,14 @@ class qubit:
 
     def _checkItems(self, control, where):
         from qitker.compiler.qRegister import qRegister
+        if isinstance(control, EqualityCondition):
+            if where is not None:
+                raise TypeError(
+                    "where cannot be used together with an equality condition"
+                )
 
+            control, where = control.left, control.right
+        
         if isinstance(control, qRegister):
             control = control[::]
         if isinstance(where, qRegister):
@@ -336,13 +352,6 @@ class qubit:
 
     #################################################################
 
-    def rotate(self, gateName, angle):
-        pass
-
-    def rotateIf(self, gateName, control, angle=0, where=None):
-        pass
-
-
     def _controlledRotateGate(self, control, angle, oType, where=None):
         comparison_requested = isinstance(where, (qubit, list))
 
@@ -444,7 +453,15 @@ class qubit:
         self.flipIf(control)
 
     #################################################################
-    
+    def __eq__(self, other):
+        if not isinstance(other, qubit):
+            return NotImplemented
+
+        return EqualityCondition(self, other)
+
+    __hash__ = object.__hash__
+
+
     def __str__(self):
         return f"index: {self._quantumCircuit.getIndex(self)}, is to measure?: {self._measured}"
 

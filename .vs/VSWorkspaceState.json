@@ -1,11 +1,9 @@
 {
   "ExpandedNodes": [
     "",
-    "\\qitker",
-    "\\qitker\\parser",
-    "\\qitker\\QuantumMath",
-    "\\version_testing"
+    "\\version_testing",
+    "\\version_testing\\Backend"
   ],
-  "SelectedNode": "\\qitker\\parser\\execution.py",
+  "SelectedNode": "\\version_testing\\Backend\\T21_equality_condition_syntax.py",
   "PreviewInSolutionExplorer": false
 }

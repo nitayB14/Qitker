@@ -159,20 +159,22 @@ class circuit:
         print("\n[Circuit]")
         print("----------------------------------------------")
         print(f"Qubits:             : {self._qubitsNumber}\n")
-        print(self.getCircuitDraw())
+        print(self.draw())
         
     def barrier(self):
         operation().apply_barrier(self)
 
 
 
-    def getCircuitDraw(self):
+    def draw(self):
         """
         Return a text representation of the circuit.
         """
 
         if self._qubitsNumber == 0:
-            return ""
+            print("")
+            return
+
 
         labels = []
 
@@ -244,7 +246,8 @@ class circuit:
                         )
                     else:
                         rows[qubitIndex] += "─" * cellWidth
-        return "\n".join(rows)
+        print("\n".join(rows))
+        return
 
 
 

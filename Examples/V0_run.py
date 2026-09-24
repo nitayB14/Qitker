@@ -11,25 +11,48 @@ from qitker import circuit, qubit, qRegister
 import math
 
 
+def oracle(q1, q2, marker):
+    marker.halfPhaseIf(q1==q2)
+    
+
+def diffuser(q1, q2):
+    q1.mix()
+    q2.mix()
+
+    q1.flip()
+    q2.flip()
+
+    q2.halfPhaseIf(q1)
+
+    q1.flip()
+    q2.flip()
+
+    q1.mix()
+    q2.mix()
+
+
+
 def main():
     party = circuit()
 
     alice = qubit(party)
     bob = qubit(party)
-    net = qubit(party)
-    marker = qubit(party)
+    marker = qubit(party, measured=False)
 
-    marker.rotateYif(alice, math.pi / 2)
+    alice.mix()
+    bob.mix()
+
+    marker.flip()
+
+    oracle(alice, bob, marker)
+    diffuser(alice, bob)
 
 
     # Visualize the circuit
-    print(party.getCircuitDraw())   
+    party.draw()   
 
     # Run on the Fibonacci-anyon backend
     result = party.measure(shots=1024)
     print(result)
 
-
 main()
-
-
