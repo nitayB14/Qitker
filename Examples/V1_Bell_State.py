@@ -20,19 +20,19 @@ def main():
     """Prepare one qubit in superposition and measure it with Qitker."""
     party = circuit()
 
-    alice = qubit(party)
-    
+    aliza = qubit(party)
+    baruch = qubit(party)
+
     #hadamard gate
-    alice.superPosition()
+    aliza.mix()
+    baruch.flipIf(aliza)
     
-    #execution
-    party.execute()
+
+    #print circuit    
+    party.draw()
 
     #measure
-    result = party.measure()
-
-    #print circuit details
-    party.details()
+    result = party.measure(shots=1024)
 
     #print measurments details
     print(result)

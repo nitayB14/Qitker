@@ -33,7 +33,7 @@ class FusionSystem:
         if qubits_num < 1:
             raise ValueError("qubits_num must be at least 1.")
 
-        if qubits_num > 20:
+        if qubits_num > 10:
             raise ValueError("Number too big for simulation")
 
         self.cache = FusionCache(enabled=cache_enabled,)

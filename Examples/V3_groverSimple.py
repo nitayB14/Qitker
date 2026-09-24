@@ -41,27 +41,22 @@ def main():
     #creating circuit
     party = circuit()
 
-    alice = qubit(party)
-    bob = qubit(party)
-    dan = qubit(party)
-    joni = qubit(party)
+    reg1 = qRegister(party, size=3)
+    reg2 = qRegister(party, size=3)
 
-
-    alice.h()
-    bob.h()
-    dan.h()
-    joni.h()
+    reg1.mix()
+    reg2.mix()
 
     marker = qubit(party, measured=False)
 
     marker.flip()
-    marker.superPosition()
+    marker.mix()
 
-    marker.flipIf([alice,bob], where=[dan, joni])
+    marker.flipIf(reg1[:] + reg2[:], where= "1x1001")
 
-    diffuser([alice,bob,dan,joni])
+    diffuser([reg1[0],reg1[1],reg1[2], reg2[0],reg2[1],reg2[2]])
 
-    party.details()
+
     parseToQiskit(party)
     
     
