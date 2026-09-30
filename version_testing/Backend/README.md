@@ -31,6 +31,8 @@ This directory contains numbered tests T1-T21 for Qitker's Fibonacci-anyon backe
 - `T19_performance_baseline.py` - Runs an anyonic-engine benchmark and writes a CSV beside the script. A second copy and its CSV files are in `T19/`. Both copies are excluded from the normal test run.
 - `T20_cache_behavior.py` - Checks cache ownership, statistics, enabled and disabled behavior, physical equivalence, and rejection of foreign basis objects.
 - `T21_equality_condition_syntax.py` - Checks symbolic `==` conditions, pattern values, equivalent gate and rotation syntax, validation, and object identity behavior.
+- `T22_barrier_execution.py` - Checks barrier behavior didnt change the logic circuit.
+- `T23_controlled_gate_execution.py` - Controlled-gate execution through Qitker's anyonic backend.
 
 ## Running the Tests
 

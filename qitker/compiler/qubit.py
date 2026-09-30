@@ -31,29 +31,29 @@ class qubit:
         - quantumCircuit: circuit
             The circuit of the qubit
         - initialize: int
-            Control qubit initialize (can be 0 or 1 and if not apply H instantly)
+            Initial basis value, either 0 or 1.
     """
 
 
     #initialize class
     def __init__(self, quantumCircuit, initialize=0, measured=True):
+        if not isinstance(quantumCircuit, circuit.circuit):
+            raise TypeError("quantumCircuit must be a circuit")
+        if isinstance(initialize, bool) or not isinstance(initialize, int):
+            raise TypeError("initialize must be an integer, either 0 or 1")
+        if initialize not in (0, 1):
+            raise ValueError("initialize must be 0 or 1")
+        if not isinstance(measured, bool):
+            raise TypeError("measured must be a boolean")
 
-        if(type(quantumCircuit) == circuit.circuit):
-            self._quantumCircuit = quantumCircuit
-            self._quantumCircuit.addQubit(self)
-            self._initialize = initialize
-            self._measured = measured
-            self._index = self._quantumCircuit.getIndex(self)
+        self._quantumCircuit = quantumCircuit
+        self._initialize = initialize
+        self._measured = measured
+        self._quantumCircuit.addQubit(self)
+        self._index = self._quantumCircuit.getIndex(self)
 
-            if initialize == 0:
-                pass #already initialize to 0s
-            elif initialize == 1:
-                self.flip() #apply not gate to initialize as 1
-            else:
-                print("number too big throw exception")
-
-        else:
-            print("throw error")
+        if initialize == 1:
+            self.flip()
     
     def getIndex(self):
         return self._index

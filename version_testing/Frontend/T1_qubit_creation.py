@@ -42,6 +42,24 @@ def test_qubit_creation():
     assert exported.num_qubits == 3
     assert exported.num_clbits == 2
 
+    try:
+        qubit(None)
+    except TypeError as error:
+        assert "quantumCircuit must be a circuit" in str(error)
+    else:
+        raise AssertionError("Expected TypeError for an invalid circuit")
+
+    circ = circuit()
+    try:
+        qubit(circ, measured="yes")
+    except TypeError as error:
+        assert "measured must be a boolean" in str(error)
+    else:
+        raise AssertionError("Expected TypeError for measured='yes'")
+
+    assert circ.getQubitsNumber() == 0
+    assert len(circ.getOperationVector()) == 0
+
 
 if __name__ == "__main__":
     # Keep the test runnable without requiring pytest.

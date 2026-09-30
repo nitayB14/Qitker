@@ -18,15 +18,12 @@ def export_to(name, circuit):
             converted circuit
     """
 
-    if (name == "qiskit"):
-        qc = exportToQiskit(circuit)
-    elif (name == "cirq"):
-        print("Comming Soon...")#[error]
-    else:
-        pass#[error]
+    if not isinstance(name, str):
+        raise TypeError("export target must be a string")
+    if name != "qiskit":
+        raise ValueError(f"Unsupported export target: {name!r}. Supported target: 'qiskit'.")
 
-
-    return qc
+    return exportToQiskit(circuit)
 
 
 

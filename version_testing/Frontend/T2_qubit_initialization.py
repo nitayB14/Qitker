@@ -27,6 +27,23 @@ def test_qubit_initialization():
 
         assert_same_state(circ, expected)
 
+    for value, expected_error in (
+        (-1, ValueError),
+        (2, ValueError),
+        (True, TypeError),
+        ("1", TypeError),
+    ):
+        circ = circuit()
+        try:
+            qubit(circ, initialize=value)
+        except expected_error:
+            pass
+        else:
+            raise AssertionError(f"Expected {expected_error.__name__} for {value!r}")
+
+        assert circ.getQubitsNumber() == 0
+        assert len(circ.getOperationVector()) == 0
+
 
 if __name__ == "__main__":
     test_qubit_initialization()

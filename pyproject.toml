@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "qitker"
+version = "1.0.0a1"
+description = "Qitker bridges intuitive, high-level quantum programming with topological quantum computation, translating readable quantum logic into Fibonacci-anyon braiding."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Nitay Bahliker" }]
+dependencies = ["numpy>=2.4,<3"]
+
+[project.optional-dependencies]
+qiskit = ["qiskit>=2.3.1,<3"]
+
+[project.urls]
+Repository = "https://github.com/nitayB14/Qitker"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["qitker", "qitker.*"]
+namespaces = true
+
+[tool.setuptools.package-data]
+"qitker.parser" = ["braid_sequences.json"]

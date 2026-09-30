@@ -49,6 +49,9 @@ class execution:
         op = self._circuit.getOperationVector()
 
         for operation in op:
+            if operation.getName() == "barrier":
+                continue
+
             controllers = (
                 tuple(operation.getControllers())
                 if hasattr(operation, "getControllers")
