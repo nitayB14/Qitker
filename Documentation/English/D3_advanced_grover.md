@@ -36,6 +36,8 @@ The diffuser acts on all eight search qubits: `mix()` and `flip()`, a controlled
 
 ## Run with Qiskit Aer
 
+The diffuser's controlled phase has seven controls, exceeding the version 1 anyonic backend's limit of two controls per gate. This example therefore uses Qiskit export and Aer simulation.
+
 Install Qitker and the example dependencies using the [project instructions](../../README.md#installation), including `requirements.txt`. From the repository root, run:
 
 ```powershell

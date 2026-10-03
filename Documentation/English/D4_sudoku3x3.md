@@ -44,6 +44,8 @@ The optimization evaluations update the angles; they are separate from the five 
 
 ## Run and decode measurements
 
+The optimizer varies the rotation angles in the cost and mixer layers. The version 1 anyonic backend does not automatically generate braid sequences for arbitrary requested angles, so this example uses Qiskit export and Aer simulation.
+
 Install Qitker and the example dependencies using the [project instructions](../../README.md#installation), including `requirements.txt`. From the repository root, run:
 
 ```powershell

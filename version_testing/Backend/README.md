@@ -1,6 +1,6 @@
 # Qitker Backend Tests
 
-This directory contains numbered tests T1-T21 for Qitker's Fibonacci-anyon backend. T1-T18 cover the fusion-space model and physical braiding; T20 covers the runtime cache. T21 checks frontend equality syntax through Qitker circuits and Qiskit export. T19 is a performance benchmark that writes CSV files, so it is excluded from the normal test run.
+This directory contains numbered tests T1-T23 for Qitker's Fibonacci-anyon backend. T1-T18 cover the fusion-space model and physical braiding; T20 covers the runtime cache. T21 checks frontend equality syntax through Qitker circuits and Qiskit export. T22 checks barrier execution, and T23 checks controlled-gate execution. T19 is a performance benchmark that writes CSV files, so it is excluded from the normal test run.
 
 ## Part A - Fusion Space and Leakage
 
@@ -42,7 +42,7 @@ Run an individual assertion-based test from the repository root without writing 
 python -B version_testing/Backend/T1_fusion_rules.py
 ```
 
-Run T1-T18 and T20-T21 in numerical order. The filter deliberately skips T19:
+Run T1-T18 and T20-T23 in numerical order. The filter deliberately skips T19:
 
 ```powershell
 $tests = Get-ChildItem version_testing/Backend -Filter 'T*.py' -File |
@@ -54,7 +54,7 @@ foreach ($test in $tests) {
 }
 ```
 
-This runs 20 scripts. Check T19 syntax without executing its benchmark or writing bytecode:
+This runs 22 scripts. Check T19 syntax without executing its benchmark or writing bytecode:
 
 ```powershell
 @'

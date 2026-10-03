@@ -130,18 +130,20 @@ Aer simulates the exported logical gates. Its results do not include Qitker's ph
 
 ## Examples and tests
 
+Start with the [project overview (D0)](https://github.com/nitayB14/Qitker/blob/main/Documentation/English/D0_Project_Overview.md) for the motivation, execution paths, and current limitations. The guides below explain each example.
+
 After installing the example dependencies, run an example from the repository root:
 
 ```powershell
 python -B Examples/EX3_advanced_grover.py
 ```
 
-| Example | Execution and output |
-| --- | --- |
-| [Bell and GHZ states](https://github.com/nitayB14/Qitker/blob/main/Examples/EX1_Bell_State.py) | Qitker anyonic execution, text circuit drawings, and measurement reports |
-| [Simple Grover search](https://github.com/nitayB14/Qitker/blob/main/Examples/EX2_simple_grover.py) | Qitker anyonic execution and text output |
-| [Advanced Grover search](https://github.com/nitayB14/Qitker/blob/main/Examples/EX3_advanced_grover.py) | Qiskit Aer simulation, circuit drawing, and a Matplotlib histogram |
-| [Sudoku with QAOA](https://github.com/nitayB14/Qitker/blob/main/Examples/EX4_sudoku3x3.py) | Qiskit Aer simulation and SciPy optimization |
+| Example | Guide | Execution and output |
+| --- | --- | --- |
+| [Bell and GHZ states](https://github.com/nitayB14/Qitker/blob/main/Examples/EX1_Bell_State.py) | [D1](https://github.com/nitayB14/Qitker/blob/main/Documentation/English/D1_Bell_and_GHZ_States.md) | Qitker anyonic execution, text circuit drawings, and measurement reports |
+| [Simple Grover search](https://github.com/nitayB14/Qitker/blob/main/Examples/EX2_simple_grover.py) | [D2](https://github.com/nitayB14/Qitker/blob/main/Documentation/English/D2_Simple_Grover.md) | Qitker anyonic execution and text output |
+| [Advanced Grover search](https://github.com/nitayB14/Qitker/blob/main/Examples/EX3_advanced_grover.py) | [D3](https://github.com/nitayB14/Qitker/blob/main/Documentation/English/D3_advanced_grover.md) | Qiskit Aer simulation, circuit drawing, and a Matplotlib histogram |
+| [Sudoku with QAOA](https://github.com/nitayB14/Qitker/blob/main/Examples/EX4_sudoku3x3.py) | [D4](https://github.com/nitayB14/Qitker/blob/main/Documentation/English/D4_sudoku3x3.md) | Qiskit Aer simulation and SciPy optimization |
 
 - [Frontend tests](https://github.com/nitayB14/Qitker/blob/main/version_testing/Frontend/README.md)
 - [Backend tests](https://github.com/nitayB14/Qitker/blob/main/version_testing/Backend/README.md)
