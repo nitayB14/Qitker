@@ -14,7 +14,7 @@ from qitker import circuit, qubit, qRegister
 
 
 def oracle(search, marker):
-    """Phase-mark the all-ones search state using a marker prepared in |->."""
+    """Phase-mark the search state if equals to 01 using a marker prepared in |->."""
     marker.flipIf(search, where="01")
 
 

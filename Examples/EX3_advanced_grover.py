@@ -102,7 +102,6 @@ def main():
     network = build_circuit()
 
     qc = network.exportCircuit("qiskit")
-    qc.draw('mpl')
 
     qc.measure(*network.getMeasuredLists())
 
@@ -123,7 +122,8 @@ def main():
     print(f"A = {best_pair[:4]}")
     print(f"B = {best_pair[4:]}")
     print(f"Measured {best_pair} in {counts[best_pair]}/{SHOTS} shots")
-
+    
+    qc.draw('mpl')
     plot_histogram(counts)
     plt.show()
 
