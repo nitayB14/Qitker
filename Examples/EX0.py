@@ -9,7 +9,6 @@
 
 """Demonstrate a two-qubit Grover search and result selection with Qitker."""
 
-
 from qitker import circuit, qubit, qRegister
 
 
@@ -57,8 +56,8 @@ def main():
     #prepering marker qubit for circuit
     marker.mix()
 
-    oracle([first_network, second_network], marker)
 
+    oracle([first_network, second_network], marker)
     diffuser([first_network, second_network])
 
 

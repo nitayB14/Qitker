@@ -21,13 +21,11 @@ result, which external Aer execution does not populate.
 import math
 import sys
 from itertools import combinations
-from pathlib import Path
-
-sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from scipy.optimize import minimize
 from qiskit import transpile
 from qiskit_aer import Aer
+
 from qitker import circuit, qubit, qRegister
 
 

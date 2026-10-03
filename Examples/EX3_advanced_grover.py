@@ -10,9 +10,6 @@
 """Demonstrate Grover search with register patterns and equality, simulated in Qiskit Aer."""
 
 
-import sys
-from pathlib import Path
-sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from qitker import circuit, qRegister
 
