@@ -21,12 +21,13 @@ class reporterObject():
             Distribution of results
     """
 
-	def __init__(self, anyonMove, totalGates, totalBraids,
+	def __init__(self, structure, anyonMove, totalGates, totalBraids,
 			  shotsNumber, outputStateFidelity, percentage, finalStateVector,
 			  leakageProbability, executionTime, ownerCircuit,):
 
 
 		self._anyonsNumber = ownerCircuit.getQubitsNumber() * 4
+		self._structure = structure
 		self._anyonMove = anyonMove
 		self._totalGates = totalGates
 		self._totalBraids = totalBraids
@@ -40,6 +41,9 @@ class reporterObject():
 
 	def getNumberOfAnyons(self):
 		return self._anyonsNumber
+
+	def getStructure(self):
+		return self._structure
 
 	def getAnyonMove(self):
 		return self._anyonMove
@@ -143,6 +147,7 @@ class reporterObject():
 
 		if debug:
 			reportStr += "\n[Debug]\n----------------------------------------------\n"
+			reportStr += str(f"Structure: {self._structure} \n")
 			reportStr += str(self._anyonMove)
 			reportStr += str(f"\nFinal state vector: \n{self._finalStateVector}\n")
 

@@ -9,11 +9,6 @@
 
 """Demonstrate Bell and GHZ state preparation and measurement with Qitker."""
 
-import sys
-from pathlib import Path
-
-sys.path.append(str(Path(__file__).resolve().parent.parent))
-
 from qitker import circuit, qRegister, qubit
 
 def bellState():
