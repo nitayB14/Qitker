@@ -7,6 +7,8 @@
 #
 #
 #
+from ctypes import Structure
+
 import numpy as np
 from qitker.compiler import qubit
 from qitker.parser import execution
@@ -276,10 +278,10 @@ class circuit:
         if len(self._qubitsArray) == 0:
             raise TypeError("cannot execute algorithm without qubits")
 
-        
         self._ex = execution.execution(self)
+        anyonStructure = self._ex._fusionSystem.tree.to_ids()
         self._ex.convert()
-
+        return anyonStructure
 
 
     def getSelectedValue(self, currentQubit):
@@ -342,8 +344,9 @@ class circuit:
         self._selectedOutcome = None
         self._selectedValues = {}
         
+
         start = time.perf_counter()
-        self.execute()
+        anyonStructure = self.execute()
         measureOutput = self._ex.measure(shots)
         end = time.perf_counter()
 
@@ -351,7 +354,8 @@ class circuit:
         filteredOutput = self.filtered(measureOutput)
         
 
-        obj = reporterObject(self._ex._fusionSystem.get_operation_history(),
+        obj = reporterObject(anyonStructure,
+                             self._ex._fusionSystem.get_operation_history(),
                              sum(1 for op in self._operationVector if op.getName() != "barrier"),
                              self._ex._braidsNumber,
                              shots,
