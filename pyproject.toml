@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "qitker"
-version = "1.0.0a1"
+version = "1.0.0a2"
 description = "Qitker bridges intuitive, high-level quantum programming with topological quantum computation, translating readable quantum logic into Fibonacci-anyon braiding."
 readme = "README.md"
 requires-python = ">=3.11"

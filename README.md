@@ -17,11 +17,11 @@ Qitker requires Python 3.11 or newer. Run the installation commands with the sam
 
 ### Install the published TestPyPI release
 
-Version `1.0.0a1` is available on [TestPyPI](https://test.pypi.org/project/qitker/1.0.0a1/). Install NumPy from the main PyPI index, then install Qitker from TestPyPI:
+Version `1.0.0a2` is available on [TestPyPI](https://test.pypi.org/project/qitker/1.0.0a2/). Install NumPy from the main PyPI index, then install Qitker from TestPyPI:
 
 ```powershell
 python -m pip install "numpy>=2.4,<3"
-python -m pip install --index-url https://test.pypi.org/simple/ --no-deps "qitker==1.0.0a1"
+python -m pip install --index-url https://test.pypi.org/simple/ --no-deps "qitker==1.0.0a2"
 python -m pip check
 ```
 
