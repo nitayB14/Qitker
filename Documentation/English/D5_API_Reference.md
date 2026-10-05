@@ -437,7 +437,7 @@ q.rotateZ(math.pi / 2)
 # Ideal result: (exp(-i*pi/4)|0> + exp(i*pi/4)|1>)/sqrt(2).
 ```
 
-The call appends an RZ operation. The relative phase between the one and zero components changes by $\theta$, while both components receive phase factors. Therefore $R_Z(\theta)$ differs by a global phase from $\operatorname{diag}(1,e^{i\theta})$.
+The call appends an RZ operation. The relative phase between the one and zero components changes by $\theta$, while both components receive phase factors. Therefore $R_Z(\theta)$ differs by a global phase from $\mathrm{diag}(1,e^{i\theta})$.
 
 ### 2.11 Phase relationships and execution support
 
@@ -521,7 +521,7 @@ Despite the parameter name `control`, this is an unconditional SWAP. The two ope
 In the ordered basis $(|a b\rangle)=(|00\rangle,|01\rangle,|10\rangle,|11\rangle)$:
 
 $$
-\operatorname{SWAP}=
+\mathrm{SWAP}=
 \begin{pmatrix}
 1&0&0&0\\
 0&0&1&0\\
@@ -529,7 +529,7 @@ $$
 0&0&0&1
 \end{pmatrix},
 \qquad
-\operatorname{SWAP}|a b\rangle=|b a\rangle.
+\mathrm{SWAP}|a b\rangle=|b a\rangle.
 $$
 
 ```python
@@ -767,9 +767,9 @@ It sends $|10\rangle$ to $i|11\rangle$ and $|11\rangle$ to $-i|10\rangle$. The p
 **CZ, CS, and CT — controlled phase gates:**
 
 $$
-CZ=\operatorname{diag}(1,1,1,-1),\qquad
-CS=\operatorname{diag}(1,1,1,i),\qquad
-CT=\operatorname{diag}(1,1,1,e^{i\pi/4}).
+CZ=\mathrm{diag}(1,1,1,-1),\qquad
+CS=\mathrm{diag}(1,1,1,i),\qquad
+CT=\mathrm{diag}(1,1,1,e^{i\pi/4}).
 $$
 
 These correspond to `phaseIf`, `halfPhaseIf`, and `quarterPhaseIf`. They add a phase of $\pi$, $\pi/2$, or $\pi/4$ only to $|11\rangle$. If the target is zero, applying Z, S, or T leaves that branch unchanged even when the control matches.
@@ -795,15 +795,15 @@ For $n$ controls followed by one target in the basis order, let $P_n=|1\cdots1\r
 
 $$
 C^n(U)=(I_{2^n}-P_n)\otimes I_2+P_n\otimes U
-=\operatorname{diag}(I_{2^{n+1}-2},U).
+=\mathrm{diag}(I_{2^{n+1}-2},U).
 $$
 
 For two controls, the basis is $(|000\rangle,|001\rangle,\ldots,|111\rangle)$, with the target last. In particular:
 
 $$
-CCX=\operatorname{diag}(I_6,X),\qquad
-CCY=\operatorname{diag}(I_6,Y),\qquad
-CCZ=\operatorname{diag}(1,1,1,1,1,1,1,-1).
+CCX=\mathrm{diag}(I_6,X),\qquad
+CCY=\mathrm{diag}(I_6,Y),\qquad
+CCZ=\mathrm{diag}(1,1,1,1,1,1,1,-1).
 $$
 
 CCX swaps only $|110\rangle$ and $|111\rangle$. CCS and CCT similarly multiply only $|111\rangle$ by $i$ and $e^{i\pi/4}$, respectively. The same construction defines gates with more controls, but their anyonic execution support is limited as described in [section 4.9](#49-translation).
@@ -838,7 +838,7 @@ $$
 V_{p,U}=(I_{2^n}-\Pi_p)\otimes I_2+\Pi_p\otimes U.
 $$
 
-For a single control on zero, this becomes $\operatorname{diag}(U,I_2)$, often called a negative or open control. For an all-`x` pattern it becomes $I_{2^n}\otimes U$.
+For a single control on zero, this becomes $\mathrm{diag}(U,I_2)$, often called a negative or open control. For an all-`x` pattern it becomes $I_{2^n}\otimes U$.
 
 **Translation to gates:**
 
@@ -894,7 +894,7 @@ V_{\mathrm{eq},U}=(I_{2^{2n}}-\Pi_{\mathrm{eq}})\otimes I_2
 +\Pi_{\mathrm{eq}}\otimes U.
 $$
 
-For two single-qubit operands and an X target, this is the explicit block matrix $\operatorname{diag}(X,I_2,I_2,X)$: the equal inputs `00` and `11` activate X.
+For two single-qubit operands and an X target, this is the explicit block matrix $\mathrm{diag}(X,I_2,I_2,X)$: the equal inputs `00` and `11` activate X.
 
 **Translation to gates:** compute each bitwise XOR into the right-hand operand using CX, apply U conditioned on that entire operand being zero, then reverse the XOR computation. No extra qubits are allocated for this comparison.
 
@@ -951,7 +951,7 @@ CR_Y(\theta)=\begin{pmatrix}
 $$
 
 $$
-CR_Z(\theta)=\operatorname{diag}(1,1,e^{-i\theta/2},e^{i\theta/2}).
+CR_Z(\theta)=\mathrm{diag}(1,1,e^{-i\theta/2},e^{i\theta/2}).
 $$
 
 For multiple controls, use $C^n(R_A(\theta))$; for patterns or equality, substitute $U=R_A(\theta)$ into the corresponding projector formula. The same X wrappers and XOR/uncompute rules apply.
@@ -968,7 +968,7 @@ target.rotateZif(controls, angle=math.pi / 3, where="01")
 
 These operations require Qiskit export for execution in the current version. Special angles are not automatically converted to stored fixed gates.
 
-**Controlled phases are not controlled RZ rotations.** For example, CT is $\operatorname{diag}(1,1,1,e^{i\pi/4})$, whereas $CR_Z(\pi/4)$ is $\operatorname{diag}(1,1,e^{-i\pi/8},e^{i\pi/8})$. Unlike the single-qubit T/RZ relationship, the difference is not a global phase on the full two-qubit system. If replacing CT with $CR_Z(\pi/4)$, an additional $\operatorname{diag}(1,e^{i\pi/8})$ on the control would be needed. `quarterPhaseIf` exports the controlled T gate directly and needs no such correction.
+**Controlled phases are not controlled RZ rotations.** For example, CT is $\mathrm{diag}(1,1,1,e^{i\pi/4})$, whereas $CR_Z(\pi/4)$ is $\mathrm{diag}(1,1,e^{-i\pi/8},e^{i\pi/8})$. Unlike the single-qubit T/RZ relationship, the difference is not a global phase on the full two-qubit system. If replacing CT with $CR_Z(\pi/4)$, an additional $\mathrm{diag}(1,e^{i\pi/8})$ on the control would be needed. `quarterPhaseIf` exports the controlled T gate directly and needs no such correction.
 
 <a id="47-register-target"></a>
 
