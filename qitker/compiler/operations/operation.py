@@ -1,3 +1,4 @@
+"""Create operation records and append them to a quantum circuit."""
 
 
 from qitker.compiler.operations.opClasses import controlledRotateOpType, opType, gateOpType, controlledOpType, rotateOpType
@@ -5,15 +6,27 @@ from qitker.compiler.operations.opClasses import controlledRotateOpType, opType,
 #####################################################################################################
 class operation:
     """
-    The class connect between the operation on qubit to the circuit vector
-    Responsible to create object of opType and add it to the circuit
-    
-    Attributes:
-        - None
+    Record gates and barriers in a circuit's operation vector.
+
+    Convert target and control qubits to circuit indexes, create the
+    corresponding operation record, and append it to the circuit. The
+    records are consumed later during execution or export; this class
+    does not execute gates.
     """
 
     ####################################################
     def apply_barrier(self, circuit):
+        """
+        Add a circuit-wide barrier to operationVector.
+
+        Args:
+            - circuit (circuit):
+                Circuit to which the barrier is added.
+
+        Returns:
+            - None
+        """
+
         op = opType(gateName="barrier")
         circuit.addOperation(op)
 
@@ -297,20 +310,82 @@ class operation:
     ################################################################################
 
     def apply_rotate_X(self, targetQubit, angle, circuit):
+        """
+        Add an RX rotation to operationVector.
+
+        Args:
+            - targetQubit (qubit):
+                Qubit to rotate around the X axis.
+            - angle:
+                Rotation angle in radians.
+            - circuit (circuit):
+                Circuit to which the operation is added.
+
+        Returns:
+            - None
+        """
+
         op = rotateOpType(gateName="RX", target=circuit.getIndex(targetQubit), angle=angle)
         circuit.addOperation(op)
     
     def apply_rotate_Y(self, targetQubit, angle, circuit):
+        """
+        Add an RY rotation to operationVector.
+
+        Args:
+            - targetQubit (qubit):
+                Qubit to rotate around the Y axis.
+            - angle:
+                Rotation angle in radians.
+            - circuit (circuit):
+                Circuit to which the operation is added.
+
+        Returns:
+            - None
+        """
+
         op = rotateOpType(gateName="RY", target=circuit.getIndex(targetQubit), angle=angle)
         circuit.addOperation(op)
 
     def apply_rotate_Z(self, targetQubit, angle, circuit):
+        """
+        Add an RZ rotation to operationVector.
+
+        Args:
+            - targetQubit (qubit):
+                Qubit to rotate around the Z axis.
+            - angle:
+                Rotation angle in radians.
+            - circuit (circuit):
+                Circuit to which the operation is added.
+
+        Returns:
+            - None
+        """
+
         op = rotateOpType(gateName="RZ", target=circuit.getIndex(targetQubit), angle=angle)
         circuit.addOperation(op)
 
     ################################################################################
         
     def apply_controlled_rotate_X(self, targetQubit, controlQubits, angle, circuit):
+        """
+        Add a controlled-RX rotation to operationVector.
+
+        Args:
+            - targetQubit (qubit):
+                Qubit to rotate around the X axis.
+            - controlQubits (qubit or list[qubit]):
+                One or more control qubits.
+            - angle:
+                Rotation angle in radians.
+            - circuit (circuit):
+                Circuit to which the operation is added.
+
+        Returns:
+            - None
+        """
+
         if isinstance(controlQubits, list):
             controllersIndexes = [
                 circuit.getIndex(controlQubit)
@@ -330,6 +405,23 @@ class operation:
         circuit.addOperation(op)
     
     def apply_controlled_rotate_Y(self, targetQubit, controlQubits, angle, circuit):
+        """
+        Add a controlled-RY rotation to operationVector.
+
+        Args:
+            - targetQubit (qubit):
+                Qubit to rotate around the Y axis.
+            - controlQubits (qubit or list[qubit]):
+                One or more control qubits.
+            - angle:
+                Rotation angle in radians.
+            - circuit (circuit):
+                Circuit to which the operation is added.
+
+        Returns:
+            - None
+        """
+
         if isinstance(controlQubits, list):
             controllersIndexes = [
                 circuit.getIndex(controlQubit)
@@ -349,6 +441,23 @@ class operation:
         circuit.addOperation(op)
     
     def apply_controlled_rotate_Z(self, targetQubit, controlQubits, angle, circuit):
+        """
+        Add a controlled-RZ rotation to operationVector.
+
+        Args:
+            - targetQubit (qubit):
+                Qubit to rotate around the Z axis.
+            - controlQubits (qubit or list[qubit]):
+                One or more control qubits.
+            - angle:
+                Rotation angle in radians.
+            - circuit (circuit):
+                Circuit to which the operation is added.
+
+        Returns:
+            - None
+        """
+
         if isinstance(controlQubits, list):
             controllersIndexes = [
                 circuit.getIndex(controlQubit)

@@ -1,21 +1,23 @@
+"""Export recorded circuit operations to Qiskit."""
 
 
 
 def export_to(name, circuit):
     """
-    Refering to target function
-        - Qiskit
-        -
-        -
+    Export a circuit to the requested platform.
+
+    Only the exact name "qiskit" is supported.
 
     Args:
-        - circuit (circuit):
-            contains information about the circuit
-        - name (string):
-            name of platform to convert the circuit
+        name (str): Export target.
+        circuit (circuit): Circuit to export.
+
     Returns:
-        - qc (circuit):
-            converted circuit
+        qiskit.QuantumCircuit: A new exported circuit.
+
+    Raises:
+        TypeError: If name is not a string.
+        ValueError: If name is not ``"qiskit"``.
     """
 
     if not isinstance(name, str):
@@ -32,15 +34,17 @@ def export_to(name, circuit):
 
 def exportToQiskit(AnyonCircuit):
     """
-    Running all over the circuit and convert it to qiskit
+    Convert the circuit's recorded operations to a new Qiskit circuit.
+
+    The exported circuit has one qubit per Qitker qubit and one classical
+    bit per qubit marked for measurement. No measurement instructions
+    are added.
 
     Args:
-        - AnyonCircuit (circuit):
-            contains information about the circuit
-            
+        AnyonCircuit (circuit): Circuit to export.
+
     Returns:
-        - qc (qiskit circuit):
-            converted circuit to qiskit
+        qiskit.QuantumCircuit: The exported circuit.
     """
 
     from qiskit import QuantumCircuit    

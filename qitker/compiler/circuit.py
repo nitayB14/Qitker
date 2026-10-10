@@ -20,24 +20,22 @@ import time
 
 
 class circuit:
-    """
-    Represents a quantum circuit
-    
+    """Represent a quantum circuit and its recorded operations.
+
     Attributes:
-        - operationVector : vector
-            the vector contain all the operations
-        - qubitsArray : array
-            all qubits list
-        - qubitsNumber : int
-            number of qubits
-        - ex : execution
-            executer to Anyon backend                
+        _operationVector (np.ndarray): Recorded gates and barriers.
+        _qubitsArray (list[qubit]): Qubits in circuit order.
+        _qubitsNumber (int): Number of qubits in the circuit.
+        _ex (execution.execution | None): Most recent backend execution.
+        _lastMeasurement (reporterObject | None): Most recent measurement report.
+        _selectedOutcome (str | None): Selected measurement bitstring.
+        _selectedValues (dict[qubit, int]): Selected bit for each measured qubit.
     """
 
 
-    #initialize class
     def __init__(self):
-        #print("""==============================================\n        Fibonacci Anyons Quantum DSL     \n==============================================\nVersion: 1.0.0-alpha\nDate: 24/07/2026\nRule: Independent researcher""")        
+        """Initialize an empty circuit with no qubits, operations, or measurement result."""
+        
         self._operationVector = np.array([])
         self._qubitsArray = []
         self._qubitsNumber = 0
@@ -47,16 +45,15 @@ class circuit:
         self._selectedOutcome = None
         self._selectedValues = {}
     
+
     def addQubit(self, qubit):
-        """
-        Adding qubit to circuit
+        """Add a qubit to the circuit.
+
+        Appends the qubit to the circuit's qubit list, increments the qubit
+        count, and clears any previous measurement result and selection.
 
         Args:
-            - qubit (qubit):
-                Qubit object we add to circuit
-
-        Returns:
-            - None
+            qubit (qubit): The qubit to add.
         """
         
         self._lastMeasurement = None
@@ -71,11 +68,8 @@ class circuit:
         """
         Return how many qubits circuit contain
 
-        Args:
-            - None
-
         Returns:
-            - (int) : number of qubits
+            int: The number of qubits currently in the circuit.
         """
         
         return self._qubitsNumber
@@ -85,12 +79,10 @@ class circuit:
         """
         Return how many qubits to measure circuit contain
 
-        Args:
-            - None
-
         Returns:
-            - (int) : number of qubits to measure
+            int: number of qubits to measure
         """
+
         num = 0
         for i in self._qubitsArray:
             if i.isToMeasure():
@@ -102,26 +94,23 @@ class circuit:
         """
         Return the array of qubits
 
-        Args:
-            - None
-
         Returns:
-            - (array) : qubits array
+            array: qubits array
         """
+        
         return self._qubitsArray
 
 
     def addOperation(self, op):
-        """
-        Adding operation to circuit
+        """Add an operation to the circuit.
+
+        Appending an operation clears the previous measurement result and any
+        selected outcome, because they no longer describe the current circuit.
 
         Args:
-            - op (opType):
-                operation object we add to the vector of operation
-
-        Returns:
-            - None
+            op (opType): The operation to append.
         """
+
         self._lastMeasurement = None
         self._selectedOutcome = None
         self._selectedValues = {}
@@ -130,14 +119,16 @@ class circuit:
     
 
     def getIndex(self, qubit):
-        """
-        Return qubit index
+        """Return the qubit's index in the circuit.
 
         Args:
-            - None
+            qubit (qubit): The qubit to locate.
 
         Returns:
-            - (int) : index of qubit
+            int: The qubit's zero-based index.
+
+        Raises:
+            ValueError: If the qubit is not in the circuit.
         """
         
         return self._qubitsArray.index(qubit)
@@ -147,40 +138,34 @@ class circuit:
         """
         Return vector of operations
 
-        Args:
-            - None
-
         Returns:
-            - (vector) : operation vector
+            vector: operation vector
         """
         
         return self._operationVector
     
 
     def details(self):
-        """
-        Print details on the circuit
-
-        Args:
-            - None
-
-        Returns:
-            - None
-        """
+        """Print how many qubits an draw the circuit"""
 
         print("\n[Circuit]")
         print("----------------------------------------------")
         print(f"Qubits:             : {self._qubitsNumber}\n")
-        print(self.draw())
+        self.draw() 
         
+
     def barrier(self):
+        """adding barrier to circuit"""
         operation().apply_barrier(self)
 
 
 
     def draw(self):
-        """
-        Return a text representation of the circuit.
+        """Print a text diagram of the circuit.
+
+        Each row represents a qubit: ``q`` marks a qubit selected for
+        measurement, and ``A`` marks one that is not. The diagram shows gate
+        names and barriers, but does not show rotation angles.
         """
 
         if self._qubitsNumber == 0:
@@ -266,15 +251,20 @@ class circuit:
 
 
     def execute(self):
-        """
-        Execute circuit to Anyon backend
+        """Execute the circuit's operations on a new anyonic backend.
 
-        Args:
-            - None
+        Stores the new execution object on the circuit. This method does not
+        sample measurement outcomes. The returned structure is captured
+        before the recorded operations are applied.
 
         Returns:
-            - None
+            tuple: A nested tuple of anyon IDs describing the initial fusion tree.
+
+        Raises:
+            TypeError: If the circuit has no qubits.
+            NotImplementedError: If a gate cannot be executed by this backend.
         """
+
         if len(self._qubitsArray) == 0:
             raise TypeError("cannot execute algorithm without qubits")
 
@@ -285,6 +275,20 @@ class circuit:
 
 
     def getSelectedValue(self, currentQubit):
+        """Return a qubit's bit in the selected measurement outcome.
+
+        Args:
+            currentQubit (qubit): The qubit whose selected value is requested.
+
+        Returns:
+            int: The selected bit, either 0 or 1.
+
+        Raises:
+            RuntimeError: If the circuit has not been measured or no outcome
+                has been selected.
+            ValueError: If the qubit is not marked for measurement.
+        """
+
         if self._lastMeasurement is None:
             raise RuntimeError("The circuit has not been measured yet.")
 
@@ -302,6 +306,20 @@ class circuit:
 
 
     def _selectMeasurementOutcome(self, result, outcome):
+        """Set the selected outcome for the circuit's latest measurement.
+
+        Maps the bits in `outcome` to the qubits marked for measurement,
+        in their circuit order.
+
+        Args:
+            result (reporterObject): The measurement report selecting the outcome.
+            outcome (str): A bitstring with one bit per measured qubit.
+
+        Raises:
+            RuntimeError: If `result` is not the latest measurement report
+                or the bitstring length does not match the measured qubits.
+        """
+
         if result is not self._lastMeasurement:
             raise RuntimeError(
                 "This measurement result is no longer the current result."
@@ -324,20 +342,28 @@ class circuit:
             for currentQubit, bit in zip(measuredQubits, outcome)
         }
 
+
     def measure(self, shots=1024):
-        """
-        Responsible to measure circuit and create details as strings
+        """Execute the circuit and sample its measurement outcomes.
+
+        Creates a fresh backend execution, samples the resulting state, and
+        keeps counts only for qubits marked for measurement. Any leakage
+        outcome is retained separately. A previous measurement result and
+        selected outcome are cleared.
 
         Args:
-            - shots (int):
-                number of shots to run
-            - debug (bool):
-                In debug mode the function print extra details on circuit
+            shots (int): Number of samples to take. Defaults to 1024.
+
         Returns:
-            - compilation (string):
-                The string contains every compilation details on circuit
-            - resultReport (string):
-                The string contains every measure result of circuit
+            reporterObject: A report containing the outcome counts and
+            execution details, including fidelity and leakage probability.
+
+        Raises:
+            TypeError: If the circuit has no qubits or `shots` is not an integer.
+            ValueError: If `shots` is less than 1 or no qubits are marked
+                for measurement.
+            NotImplementedError: If a recorded gate cannot be executed by
+                the anyonic backend.
         """
 
         self._lastMeasurement = None
@@ -374,6 +400,24 @@ class circuit:
 
 
     def filtered(self, measureOutput):
+        """Keep measurement counts for qubits marked for measurement.
+
+        Removes bits belonging to unmeasured qubits and combines counts
+        that become the same bitstring. The `LEAKAGE` count is preserved
+        as a separate entry.
+
+        Args:
+            measureOutput (dict[str, int]): Counts for full-circuit
+                bitstrings, with an optional `LEAKAGE` entry.
+
+        Returns:
+            dict[str, int]: Counts keyed by the measured qubits' bitstrings,
+            in circuit order, with `LEAKAGE` if present.
+
+        Raises:
+            ValueError: If no qubits are marked for measurement.
+        """
+        
         measuredIndexes = [qubit.getIndex() for qubit in self._qubitsArray if qubit.isToMeasure()]
         filteredOutput = {}
 
@@ -401,27 +445,29 @@ class circuit:
 
     def exportCircuit(self, name):
         """
-        export circuit to diffrent quantum lenguage
+        export circuit to diffrent quantum lenguage 
+        Supported lenguages: - Qiskit
 
         Args:
-            - name:
-                name of quantum lenguage
+            name (string): name of quantum lenguage
 
         Returns:
-            - circuit exported from the quantum lenguage
+            circuit exported from the quantum lenguage
         """
 
         return export_to(name, self)
     
-    def getMeasuredLists(self):
-        """
-        export circuit to diffrent quantum lenguage
 
-        Args:
-            - None
+    def getMeasuredLists(self):
+        """Return the qubit and classical-bit indexes used for measurement.
+
+        The first list contains the circuit indexes of qubits marked for
+        measurement. The second contains their corresponding consecutive
+        classical-bit indexes, starting at 0. Both lists follow circuit order.
 
         Returns:
-            - returning 2 list of measured qubits indexs
+            tuple[list[int], list[int]]: Qubit indexes and their corresponding
+            classical-bit indexes.
         """
 
         LogicalRegister = []
@@ -440,6 +486,8 @@ class circuit:
 
     #returning string with basic information on the circuit
     def __str__(self):
+        """Return the qubit count followed by each qubit's string representation."""
+        
         y = ""
         for j in self._qubitsArray:
             y += f"{j}\n"
@@ -447,4 +495,5 @@ class circuit:
         return f"number of qubits: {self._qubitsNumber}\n{y}"
 
     def __repr__(self):
+        """Return the same circuit description as `__str__`."""
         return self.__str__()
