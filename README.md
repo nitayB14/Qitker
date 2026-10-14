@@ -2,12 +2,14 @@
 
 Qitker explores quantum computation with Fibonacci anyons. It connects a simple circuit interface `circuit`, `qubit`, and `qRegister` to a backend that represents states in fusion spaces and performs braiding through F- and R-moves. Circuits can also be exported to Qiskit.
 
+For the complete circuit-building API, see the [API reference (D5)](https://github.com/nitayB14/Qitker/blob/main/Documentation/English/D5_API_Reference.md).
+
 ## Current status
 
 - The version 1 frontend and Qiskit export are implemented and tested.
 - The anyonic backend models computational and leakage states and supports physical cross-qubit braiding.
 - Normal backend execution includes stored braid sequences for CX, CY, CZ, CS, CT, CCX, CCY, CCZ, CCS, and CCT.
-- Version 1 anyonic execution supports up to two controls per gate; this is not a limit on the total number of qubits in a circuit.
+- The circuit API and Qiskit export impose no fixed limit on the number of controls per gate. Version 1 anyonic execution supports up to two controls per gate; this does not limit the total number of qubits in a circuit.
 - The physical backend represents Fibonacci anyons in a fusion-tree basis and tracks both computational and leakage states.
 - It applies physical braids through F and R moves, including braids across qubit boundaries, and reports fidelity and leakage relative to the ideal logical result.
 
@@ -91,6 +93,8 @@ qubit(sample).mix()
 qiskit_circuit = sample.exportCircuit("qiskit")
 print(qiskit_circuit)
 ```
+
+Qiskit export also preserves rotation angles and controlled rotations, which are not supported by the current anyonic execution path.
 
 Export converts the circuit's gates; it does not run the anyonic backend or add Qiskit measurement instructions. Add those instructions explicitly before sampling with Qiskit Aer.
 

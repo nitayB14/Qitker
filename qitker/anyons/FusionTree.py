@@ -1,11 +1,31 @@
 
 class FusionTree:
     """
-    Represents the fusion tree structure of four Fibonacci anyons.              
+    Represents the binary fusion-tree structure of Fibonacci anyons.
+
+    Internal nodes are nested (left, right) tuples, and leaves are
+    Anyon objects. The tree stores the grouping and order of the anyons.
+
+    Tree operations modify only the structure; they do not transform
+    the quantum state.
     """
 
-    # Initializes a fusion tree with four anyons and an optional total charge.
     def __init__(self, structure, total_charge=None):
+        """
+        Initializes a fusion tree with the given structure and optional total charge.
+
+        Args:
+            structure:
+                An Anyon leaf or nested (left, right) tuples of Anyon leaves.
+                Stored directly without copying.
+            total_charge:
+                Optional total charge associated with the tree.
+                Stored without validating fusion compatibility.
+
+        Raises:
+            ValueError: If structure is None.
+        """
+
         if structure is None:
             raise ValueError("Fusion-tree structure cannot be None.")
 
@@ -15,7 +35,14 @@ class FusionTree:
 
     def flatten(self, node=None):
         """
-        Returns all anyons in the fusion tree as a flat list.
+        Returns the anyon objects in left-to-right leaf order.
+
+        Args:
+            node:
+                The subtree or leaf to traverse. If None, uses the entire tree.
+
+        Returns:
+            list: A new list containing the existing Anyon objects.
         """
 
         if node is None:
@@ -39,10 +66,7 @@ class FusionTree:
     def find_path(self, anyon_id):
         """
         Returns the path from the root to the anyon with the given ID.
-
-        Path values:
-            0 -> left
-            1 -> right
+        Each path value is 0 for left or 1 for right.
 
         Returns:
             tuple: path to the anyon
@@ -57,7 +81,19 @@ class FusionTree:
     
     def _find_path_recursive(self, node, anyon_id, current_path):
         """
-        Recursively searches for an anyon and builds its path.
+        Searches a subtree recursively, visiting the left branch before the right.
+
+        Args:
+            node:
+                The current subtree or Anyon leaf.
+            anyon_id:
+                The ID of the anyon to find.
+            current_path:
+                The path from the tree root to the current node.
+
+        Returns:
+            tuple: The path to the first matching anyon.
+            None: If the anyon was not found in this subtree.
         """
 
         # Reached an anyon leaf.
@@ -89,17 +125,18 @@ class FusionTree:
 
     def get_node_at_path(self, path):
         """
-        Returns the node located at the given path.
+        Returns the node at the given path from the root.
 
-        Path values:
-            0 -> left
-            1 -> right
+        Each path value should be 0 for left or 1 for right.
+        An empty path returns the entire tree structure.
 
         Args:
-            path (tuple): Path from the root.
+            path (tuple):
+                The sequence of directions from the root.
 
         Returns:
-            Anyon or subtree.
+            Anyon or tuple: The leaf or subtree at the given path.
+            None: If the path continues beyond an Anyon leaf.
         """
 
         node = self.structure
@@ -169,6 +206,22 @@ class FusionTree:
 
 
     def _swap_siblings(self, first_id, second_id):
+        """
+        Swaps two direct sibling anyons in the tree structure.
+
+        Updates self.structure without applying R-move phases
+        to the quantum state.
+
+        Args:
+            first_id:
+                The ID of the first anyon.
+            second_id:
+                The ID of the second anyon.
+
+        Raises:
+            ValueError: If the IDs do not identify two distinct direct siblings.
+        """
+
         if not self.is_siblings(first_id, second_id):
             
             raise ValueError(
@@ -189,6 +242,27 @@ class FusionTree:
 
 
     def _replace_node_at_path(self, path, replacement):
+        """
+        Returns a tree structure with the node at the given path replaced.
+
+        Rebuilds the tuples along the path without modifying self.structure.
+        Unchanged subtrees and Anyon objects are reused.
+
+        Args:
+            path (tuple):
+                Directions from the root: 0 for left and 1 for right.
+                An empty path replaces the root.
+            replacement:
+                The leaf or subtree to insert.
+
+        Returns:
+            The resulting tree structure.
+
+        Raises:
+            ValueError: If the path continues beyond a leaf or contains
+                a value other than 0 or 1.
+        """
+
         def replace_recursive(node, remaining_path):
             if len(remaining_path) == 0:
                 return replacement
@@ -221,24 +295,27 @@ class FusionTree:
 
         return replace_recursive(self.structure, path)
 
-
-
-
-
     ##########################################################################################
 
     def FMove(self, path, direction):
-
-
         """
-        Applies a local F-move at the given subtree.
+        Applies the structural part of an F-move at the given path.
 
-        direction:
-            "right":
-                ((a, b), c) -> (a, (b, c))
+        Updates self.structure while preserving the left-to-right leaf order.
+        Does not transform the fusion basis or quantum state.
 
-            "left":
-                (a, (b, c)) -> ((a, b), c)
+        Args:
+            path (tuple):
+                Directions from the root: 0 for left and 1 for right.
+                An empty path selects the root.
+            direction (str):
+                "right": ((a, b), c) -> (a, (b, c)).
+                "left": (a, (b, c)) -> ((a, b), c).
+                Each component may be a leaf or subtree.
+
+        Raises:
+            ValueError: If the target is not a subtree, its structure is
+                incompatible with the move, or the direction is invalid.
         """
 
         subtree = self.get_node_at_path(path)
@@ -264,9 +341,20 @@ class FusionTree:
 
     def _rotate_right(self, subtree):
         """
-        Converts:
+        Returns a subtree regrouped from ((a, b), c) to (a, (b, c)).
 
-            ((a, b), c) -> (a, (b, c))
+        The components a, b, and c may be leaves or subtrees.
+        Does not modify self.structure.
+
+        Args:
+            subtree (tuple):
+                The subtree to regroup.
+
+        Returns:
+            tuple: The regrouped subtree.
+
+        Raises:
+            ValueError: If the subtree does not have the required structure.
         """
 
         left, c = subtree
@@ -285,9 +373,20 @@ class FusionTree:
 
     def _rotate_left(self, subtree):
         """
-        Converts:
+        Returns a subtree regrouped from (a, (b, c)) to ((a, b), c).
 
-            (a, (b, c)) -> ((a, b), c)
+        The components a, b, and c may be leaves or subtrees.
+        Does not modify self.structure.
+
+        Args:
+            subtree (tuple):
+                The subtree to regroup.
+
+        Returns:
+            tuple: The regrouped subtree.
+
+        Raises:
+            ValueError: If the subtree does not have the required structure.
         """
 
         a, right = subtree
@@ -310,11 +409,26 @@ class FusionTree:
 #return basic information about the fution tree
 
     def to_ids(self):
+        """
+        Returns the tree structure with each Anyon leaf replaced by its ID.
+
+        Preserves the nested tuple structure without modifying the tree.
+        """
+
         return self._to_ids_recursive(self.structure)
 
 
     def _to_ids_recursive(self, node):
+        """
+        Recursively converts Anyon leaves to IDs while preserving tuple structure.
 
+        Args:
+            node:
+                The subtree or Anyon leaf to convert.
+
+        Returns:
+            tuple or int: The converted subtree or the leaf's ID.
+        """
         if isinstance(node, tuple):
             return tuple(
                 self._to_ids_recursive(child)

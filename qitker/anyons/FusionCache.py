@@ -46,6 +46,12 @@ class FusionCache:
     )
 
     def __init__(self, enabled: bool = True) -> None:
+        """Create empty stores for all five namespaces and zero their counters.
+
+        enabled controls cache lookup and storage. When False, get_or_build
+        computes each requested value without caching it.
+        Raises TypeError if enabled is not a boolean.
+        """
         self.enabled = enabled
 
         self._bases: dict[object, object] = {}
@@ -170,6 +176,12 @@ class FusionCache:
 
 
     def lookup(self, namespace: str, key: object,) -> tuple[bool, object | None]:
+        """Look up a hashable key in a supported cache namespace.
+
+        Returns (True, value) on a hit, without copying the stored value,
+        or (False, None) when absent or disabled. Records the request and
+        its outcome: hit, miss, or bypass when cache use is disabled.
+        """
         self._validate_namespace(namespace)
         self.record_request(namespace)
 
@@ -188,6 +200,12 @@ class FusionCache:
 
 
     def store(self, namespace: str, key: object, value: object,) -> None:
+        """Store a value under a hashable key in a supported namespace.
+
+        Replaces any existing entry without copying the value or updating
+        counters. Raises RuntimeError if caching is disabled, or ValueError
+        if value is None.
+        """
         self._validate_namespace(namespace)
 
         if not self.enabled:
@@ -203,6 +221,14 @@ class FusionCache:
         self._stores[namespace][key] = value
 
     def get_or_build(self, namespace: str, key: object, builder,) -> object:
+        """Return a cached value or compute it by calling builder().
+
+        builder takes no arguments. A successful lookup returns the stored
+        object directly; otherwise, calls builder, records a build after it
+        returns, and stores the result only if caching is enabled.
+        Builder exceptions propagate without recording a completed build.
+        A result stored in the cache must not be None.
+        """
         found, value = self.lookup(
             namespace,
             key,

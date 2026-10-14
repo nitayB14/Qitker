@@ -18,6 +18,7 @@ class sequenceOperation:
     """
 
     def __init__(self):
+        """Loads braid_sequences.json from this module's directory into self.sequences."""
         json_path = Path(__file__).resolve().parent / "braid_sequences.json"
 
         with open(json_path, "r") as f:

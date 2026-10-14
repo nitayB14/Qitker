@@ -1,12 +1,18 @@
+"""Constants and matrices for Fibonacci braiding and single-qubit gates."""
+
 import numpy as np
 
 class math_constant():
+    """Group the Fibonacci F/R matrices and ideal gate matrices."""
     
+    # Golden ratio.
     phi = (1 + np.sqrt(5)) / 2
 
+    # R phases for two τ anyons fusing to VACUUM or TAU.
     R_VACUUM = np.exp(-4j * np.pi / 5)
     R_TAU = np.exp(3j * np.pi / 5)
 
+    # R matrix in (VACUUM, TAU) fusion-channel order.
     R = np.array([
         [R_VACUUM, 0],
         [0, R_TAU]
@@ -14,12 +20,14 @@ class math_constant():
     ], dtype=complex)
 
 
+    # F-move matrix in the same fusion-channel order.
     F = np.array([
         [1/phi, 1/np.sqrt(phi)],
         [1/np.sqrt(phi), -1/phi]
     ], dtype=complex)
 
 
+    # Inverse matrices are the conjugate transposes.
     F_inv = F.conj().T
     R_inv = R.conj().T
 
@@ -45,6 +53,7 @@ class math_constant():
     R34_inv = R_inv
 
 
+    # Positive keys select σ₁-σ₃; negative keys select their inverses.
     SIGMA_MATRICES = {
     1: R12,
     -1: R12_inv,
@@ -57,7 +66,7 @@ class math_constant():
 
     # Hadamard gate.
     # Type: np.ndarray (2x2, complex)
-    # Represents: Creates superposition.
+    # Represents: Maps basis states to superpositions.
     H = (1/np.sqrt(2)) * np.array([
         [1, 1],
         [1, -1]
@@ -112,6 +121,7 @@ class math_constant():
     ], dtype=complex)
 
 
+    # Map gate names to their ideal single-qubit matrices.
     GATE_MATRICES = {
     "I": I,
     "H": H,

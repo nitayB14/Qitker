@@ -1,3 +1,5 @@
+"""Physical and ideal statevectors, fusion transforms, and measurement sampling."""
+
 from qitker.QuantumMath.constant import math_constant
 import numpy as np
 
@@ -7,8 +9,27 @@ from qitker.anyons.Anyon import Charge
 fibonacciConst = math_constant()
 
 class HilbertSpace:
+    """Hold the physical fusion state and its ideal logical reference.
+
+    state_vector contains amplitudes in basis.states order, including leakage.
+    ideal_state_vector contains logical amplitudes in binary bitstring order,
+    with qubit 0 as the leftmost bit. Local operator matrices track accumulated
+    single-qubit operations; they do not describe the full joint state.
+
+    Physical transform methods return new vectors. FusionSystem coordinates
+    tree changes and installs the resulting basis and state together.
+    """
 
     def __init__(self, basis: FusionBasis):
+        """Initialize both statevectors to logical |00...0>.
+
+        Args:
+            basis: A fusion basis with a logical mapping for the all-zero state.
+
+        Initializes local operators to identity and ideal operation history
+        to an empty list. The physical dimension is the basis size; the ideal
+        logical dimension is 2 ** qubits_num.
+        """
 
         self.basis = basis
         self.qubits_num = basis.qubits_num
@@ -50,10 +71,17 @@ class HilbertSpace:
         state_vector: np.ndarray | None = None,
         reindex_map: tuple[int, ...] | None = None,
     ) -> np.ndarray:
-        """
-        Return the current statevector reindexed into new_basis.
+        """Return a new vector with amplitudes reindexed into new_basis.
 
-        This method does not modify the HilbertSpace.
+        Args:
+            new_basis: A basis containing the same fusion-label states.
+            state_vector: Source amplitudes in the current basis, or None
+                to use self.state_vector.
+            reindex_map: Optional mapping where map[old_index] = new_index.
+                Computed from the bases if omitted; assumed valid if supplied.
+
+        Reorders amplitudes without applying an F transform or updating the
+        stored basis and state. The source shape must be (self.dimension,).
         """
 
         source_state_vector = (self.state_vector if state_vector is None else state_vector)
@@ -85,9 +113,10 @@ class HilbertSpace:
 
 
     def probs(self):
-        """
-        Computes the measurement probabilities
-        of the current quantum state.
+        """Return normalized probabilities in physical basis-index order.
+
+        Computes squared amplitude magnitudes and divides by their sum.
+        Assumes a finite, nonzero statevector; leaves the vector unchanged.
         """
 
         probabilities = np.abs(self.state_vector) ** 2
@@ -95,6 +124,10 @@ class HilbertSpace:
         return probabilities / probabilities.sum()
     
     def computational_probability(self) -> float:
+        """Return the total probability in computational basis states.
+
+        Raises RuntimeError if the basis has no logical classification.
+        """
         if not self.basis.classify_logical:
             raise RuntimeError(
                 "Computational probability is unavailable "
@@ -105,6 +138,10 @@ class HilbertSpace:
         return float(probabilities[self.basis.computational_indices].sum())
     
     def leakage_probability(self) -> float:
+        """Return the total probability outside the computational subspace.
+
+        Raises RuntimeError if the basis has no logical classification.
+        """
         if not self.basis.classify_logical:
             raise RuntimeError(
                 "Leakage probability is unavailable in a "
@@ -115,11 +152,9 @@ class HilbertSpace:
         return float(probabilities[self.basis.leakage_indices].sum())
     
     def measure_once(self):
-        """
-        Measures the current quantum state once.
+        """Sample one physical basis index using the current probabilities.
 
-        Returns:
-            int: Measured basis-state index.
+        Does not collapse or otherwise change the statevector.
         """
 
         probabilities = self.probs()
@@ -131,6 +166,12 @@ class HilbertSpace:
 
 
     def run_measurements(self, shots):
+        """Sample shots outcomes from the unchanged state and return counts.
+
+        shots must be a positive integer. Results are keyed by logical
+        bitstring, or "LEAKAGE" for indices absent from the logical mapping.
+        Logical decoding assumes the basis has a logical classification.
+        """
         if not isinstance(shots, int):
             raise TypeError(
                 "shots must be an integer."
@@ -163,6 +204,19 @@ class HilbertSpace:
         target: int,
         controllers=(),
     ) -> None:
+        """Apply a gate to the ideal state and record it in ideal_operations.
+
+        Args:
+            gate_name: Case-insensitive base gate name: I, H, X, Y, Z, S, or T.
+            target: Index of the target qubit.
+            controllers: Distinct control-qubit indices, excluding target.
+                The gate acts when all control bits are 1; empty means
+                an unconditional gate.
+
+        Uncontrolled gates also update the target's local ideal operator.
+        Raises TypeError for invalid argument types and ValueError for an
+        unsupported gate or invalid qubit selection.
+        """
 
         if not isinstance(gate_name, str):
             raise TypeError(
@@ -251,6 +305,13 @@ class HilbertSpace:
         target: int,
         controllers: tuple,
     ) -> np.ndarray:
+        """Return a copy of a logical state after a possibly controlled gate.
+
+        Applies the 2x2 gate to amplitude pairs differing only at target,
+        provided all controller bits are 1. Qubit 0 is the leftmost bit.
+        Assumes target and controllers were validated by the caller.
+        Raises ValueError for incompatible state or gate shapes.
+        """
 
         state = np.asarray(
             state,
@@ -270,6 +331,7 @@ class HilbertSpace:
                 "A logical base gate must be a 2x2 matrix."
             )
 
+        # Map the qubit index to its bit in a logical basis index.
         target_mask = (
             1 << (self.qubits_num - 1 - target)
         )
@@ -285,6 +347,7 @@ class HilbertSpace:
 
         result = state.copy()
 
+        # Visit each target-bit pair once, starting with target = 0.
         for zero_index in range(
             self.logical_dimension
         ):
@@ -323,6 +386,11 @@ class HilbertSpace:
 
 
     def _get_gate_matrix(self, gate_name: str) -> np.ndarray:
+        """Return the shared ideal 2x2 matrix for a case-insensitive gate name.
+
+        Raises TypeError for a non-string or ValueError for an unknown gate.
+        The returned matrix is not copied.
+        """
         if not isinstance(gate_name, str):
             raise TypeError("gate_name must be a string.")
 
@@ -340,6 +408,15 @@ class HilbertSpace:
 
 
     def state_fidelity(self) -> float:
+        """Return squared overlap between the physical and ideal states.
+
+        Embeds the ideal state into the computational physical indices, with
+        zero leakage amplitudes. Assumes normalized vectors and includes
+        leakage loss without renormalizing the computational component.
+
+        Raises RuntimeError if logical classification is unavailable or the
+        result exceeds 1 beyond numerical tolerance. Returns a float in [0, 1].
+        """
 
         if not self.basis.classify_logical:
             raise RuntimeError(
@@ -354,6 +431,7 @@ class HilbertSpace:
             for label in self.logical_labels
         )
 
+        # Embed the logical reference in the full space, leaving leakage zero.
         ideal_physical_state = np.zeros(
             self.dimension,
             dtype=complex,
@@ -387,15 +465,26 @@ class HilbertSpace:
         )
     
     def _decode_measurement(self,physical_index: int,) -> str:
+        """Return the mapped logical bitstring, or "LEAKAGE" if unmapped.
+
+        Assumes a valid physical index and a logically classified basis.
+        """
         if physical_index in (self.basis.physical_to_logical):
             return self.basis.physical_to_logical[physical_index]
 
         return "LEAKAGE"
     def get_state_vector(self):
-        #Returns the current quantum state.
+        """Return the physical state array itself, without copying it."""
         return self.state_vector
 
     def record_local_braid(self, qubit_id: int, index: int,) -> None:
+        """Left-multiply a qubit's accumulated local braid operator.
+
+        index selects sigma 1, 2, or 3; negative indices select inverses.
+        Updates local_braid_operators only, leaving state_vector unchanged.
+        Raises TypeError for non-integer or boolean indices, or ValueError
+        for an unknown qubit or unsupported local sigma.
+        """
         if isinstance(qubit_id, bool) or not isinstance(qubit_id, int,):
             raise TypeError("qubit_id must be an integer.")
 
@@ -421,6 +510,15 @@ class HilbertSpace:
         parent_path: tuple,
         inverse: bool = False,
     ) -> np.ndarray:
+        """Return a read-only array of R phases, one per physical basis state.
+
+        parent_path identifies the fusion node of the two TAU anyons being
+        exchanged. Its charge selects the VACUUM or TAU phase; inverse=True
+        uses the conjugate phase. The caller establishes a valid sibling pair.
+
+        Raises TypeError for invalid argument types or ValueError for a
+        missing node label or unsupported fusion charge.
+        """
         if not isinstance(parent_path, tuple):
             raise TypeError(
                 "parent_path must be a tuple."
@@ -468,7 +566,12 @@ class HilbertSpace:
         inverse: bool = False,
         r_plan: np.ndarray | None = None,
     ) -> np.ndarray:
-        """Return the statevector after applying an R-symbol."""
+        """Return a new physical vector multiplied by the R phases.
+
+        Builds phases from parent_path and inverse if r_plan is omitted.
+        A supplied plan is used directly and must match the current basis
+        and requested move. Does not update the stored state or tree.
+        """
 
         if r_plan is None:
             r_plan = self.build_r_plan(
@@ -488,7 +591,30 @@ class HilbertSpace:
         old_cluster_maps: tuple[dict, ...] | None = None,
         new_cluster_maps: tuple[dict, ...] | None = None,
     ) -> tuple:
-        """Build the index transitions required by an F-move."""
+        """Match old and new basis indices for a local F-move.
+
+        Groups states with identical cluster charges outside the changing
+        intermediate channel. A group has one channel to copy, or two
+        channels to mix in (VACUUM, TAU) order.
+
+        Args:
+            new_basis: The basis after regrouping the tree.
+            old_intermediate_cluster: Anyon-ID frozenset for the old channel.
+            new_intermediate_cluster: Anyon-ID frozenset for the new channel.
+            direction: "right" or "left"; matrix selection occurs when applied.
+            old_cluster_maps: Optional per-state cluster-charge maps in old
+                basis order. Computed if omitted; assumed valid if supplied.
+            new_cluster_maps: Corresponding maps in new basis order.
+
+        Returns:
+            tuple: Entries (old_indices, new_indices), each holding one or
+                two indices per basis. No amplitudes are changed here.
+
+        Raises:
+            TypeError: If the basis or cluster arguments have invalid types.
+            ValueError: If direction is invalid or channel groups are missing,
+                duplicated, incompatible, or unsupported.
+        """
 
         if not isinstance(new_basis, FusionBasis):
             raise TypeError(
@@ -523,6 +649,7 @@ class HilbertSpace:
             )
 
         def spectator_key(cluster_labels, excluded_cluster):
+            """Key all cluster charges except the changing intermediate one."""
             items = [
                 (tuple(sorted(cluster)), charge)
                 for cluster, charge in cluster_labels.items()
@@ -531,6 +658,7 @@ class HilbertSpace:
             return tuple(sorted(items, key=lambda item: item[0]))
 
         def build_groups(cluster_maps, excluded_cluster):
+            """Group by unchanged charges, mapping each channel to its index."""
             groups = {}
 
             for index, cluster_labels in enumerate(cluster_maps):
@@ -623,7 +751,16 @@ class HilbertSpace:
         new_cluster_maps: tuple[dict, ...] | None = None,
         f_plan: tuple | None = None,
     ) -> np.ndarray:
-        """Return the statevector transformed into an F-related basis."""
+        """Return a new physical vector in the basis after an F-move.
+
+        Uses F for direction="right" and F_inv for "left". Single-channel
+        groups copy their amplitude; two-channel groups mix via that matrix.
+        Cluster arguments and optional maps follow build_f_plan's convention.
+
+        If f_plan is supplied, it must already match both bases and the move;
+        cluster arguments and maps are then unused. Otherwise the plan is
+        built here. The stored basis and state are not modified.
+        """
 
         if f_plan is None:
             f_plan = self.build_f_plan(
@@ -664,6 +801,7 @@ class HilbertSpace:
         return new_state_vector
 
     def __str__(self):
+        """Return the qubit count, physical dimension, and statevector shape."""
         return (
             f"HilbertSpace(\n"
             f"    qubits = {self.qubits_num},\n"
@@ -674,4 +812,5 @@ class HilbertSpace:
 
 
     def __repr__(self):
+        """Return the same diagnostic summary as str(self)."""
         return self.__str__()

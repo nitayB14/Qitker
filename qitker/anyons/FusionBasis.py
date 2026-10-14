@@ -38,7 +38,25 @@ class FusionBasis:
         total_charge: Charge = Charge.VACUUM,
         classify_logical: bool = True,
     ):
-        """Initialize the containers for a basis tied to 'tree' ."""
+        """Build the fusion basis for the given tree and logical qubits.
+
+        Enumerates valid fusion-charge labelings and keeps those with the
+        requested total charge. Optionally classifies the resulting states
+        as computational or leakage states and builds logical index mappings.
+
+        Args:
+            tree: The fusion tree whose current structure defines the basis.
+            qubits: Logical qubits ordered by ID from 0 to n-1.
+            total_charge: Required charge at the root; defaults to VACUUM.
+            classify_logical: Whether to build qubit paths and classify the
+                physical states. The physical basis is built either way.
+
+        Raises:
+            TypeError: If an argument has an invalid type.
+            ValueError: If the tree, qubits, or charge are incompatible, or
+                the resulting basis contains duplicate physical or
+                logical states.
+        """
         self._validate_inputs(tree, qubits, total_charge)
 
         if not isinstance(classify_logical, bool):
@@ -72,12 +90,15 @@ class FusionBasis:
         if self.classify_logical:
             self._build_qubit_paths()
 
+        # Enumerate valid fusion channels, then keep states with the
+        # requested charge at the root.
         all_states = self._enumerate_subtree(
             self._tree.structure
         )
 
         self.states = [state for state in all_states if state["total"] is self._total_charge]
 
+        # Index each state by its internal-node labels for fast lookup.
         self.state_to_index = {
             self._state_key(state["labels"]): index
             for index, state in enumerate(self.states)
@@ -88,6 +109,8 @@ class FusionBasis:
                 "Fusion basis contains duplicate states."
             )
 
+        # Map computational states to logical bits; keep the remaining
+        # physical states classified as leakage.
         if self.classify_logical:
             self._classify_states()
 
@@ -99,7 +122,24 @@ class FusionBasis:
         qubits: list[AnyonicQubit],
         total_charge: Charge,
     ) -> None:
-        """Validate that the tree, qubits, and charge describe one system."""
+        """
+        Validate that the tree, qubits, and total charge describe one system.
+
+        Checks that qubits have consecutive IDs, their anyons are distinct TAU
+        anyons, and the tree contains exactly the same anyon IDs. If the tree
+        specifies a total charge, it must match total_charge.
+
+        Args:
+            tree: The fusion tree to validate.
+            qubits: Logical qubits ordered by ID from 0 to n-1.
+            total_charge: The required total charge.
+
+        Raises:
+            TypeError: If an argument or tree leaf has an invalid type.
+            ValueError: If the qubits are empty, IDs are duplicated or out of
+                order, charges are incompatible, or tree and qubit IDs differ.
+        """
+
         if not isinstance(tree, FusionTree):
             raise TypeError("tree must be a FusionTree object.")
 
@@ -168,7 +208,22 @@ class FusionBasis:
 
     @staticmethod
     def _common_path(paths: list[tuple]) -> tuple:
-        """Return the longest common prefix shared by all paths."""
+        """
+        Return the longest prefix shared by all paths.
+
+        The result is the path to the deepest common ancestor of the
+        corresponding nodes. Returns an empty tuple if the paths have
+        no shared first step.
+
+        Args:
+            paths: A non-empty list of paths from the tree root.
+
+        Returns:
+            tuple: The longest common path prefix.
+
+        Raises:
+            ValueError: If paths is empty.
+        """
 
         if not paths:
             raise ValueError(
@@ -187,8 +242,21 @@ class FusionBasis:
 
 
     def _build_qubit_paths(self) -> None:
-        """Build logical-qubit paths from current leaf positions."""
+        """
+        Build the tree paths used to classify each logical qubit.
 
+        Divides the current left-to-right leaf order into blocks of four anyons.
+        For each block, stores the common path of all four leaves ("root"),
+        the first two ("left_pair"), and the last two ("right_pair") in
+        self.qubit_paths.
+
+        The blocks are determined by current leaf positions, not by the
+        anyons originally assigned to each qubit.
+
+        Raises:
+            ValueError: If a block does not contain four anyons or one of
+                its leaves cannot be found in the tree.
+        """
         current_anyons = self._tree.flatten()
         qubit_paths = {}
 
@@ -227,8 +295,25 @@ class FusionBasis:
         node,
         path: tuple = (),
     ) -> list[dict]:
-        """Enumerate all valid fusion labelings of a subtree."""
+        """
+        Enumerate all valid fusion-charge labelings of a subtree.
 
+        For each combination of left and right child states, applies the
+        Fibonacci fusion rules and creates a state for every allowed outcome
+        at the current node. Leaf charges come from the Anyon objects.
+
+        Args:
+            node:
+                The subtree or Anyon leaf to enumerate.
+            path:
+                Path from the tree root to node. Used as the key for its
+                fusion charge when node is internal.
+
+        Returns:
+            list[dict]: Possible states of the subtree. Each state contains
+                "total", its resulting charge, and "labels", a mapping from
+                internal-node paths to charges.
+        """
         if not isinstance(node, tuple):
             return [
                 {
@@ -249,6 +334,8 @@ class FusionBasis:
 
         states = []
 
+        # Combine every pair of child states, creating one state for
+        # each charge allowed by the fusion rules.
         for left_state in left_states:
             for right_state in right_states:
                 outcomes = fusion_outcomes(
@@ -268,10 +355,28 @@ class FusionBasis:
 
         return states
 
+
+
     def get_reindex_map(self, new_basis: "FusionBasis",) -> tuple[int, ...]:
         """
-        Map every index in this basis to its matching index
-        in another basis with the same fusion-label space.
+        Map this basis's physical indices to matching indices in another basis.
+
+        States are matched by their internal-node charge labels. This
+        reorders amplitudes when both bases contain the same labeled states;
+        it does not apply an F-move transformation.
+
+        Args:
+            new_basis:
+                The basis to map into.
+
+        Returns:
+            tuple[int, ...]: A mapping where result[old_index] is the
+                corresponding index in new_basis.
+
+        Raises:
+            TypeError: If new_basis is not a FusionBasis.
+            ValueError: If the dimensions differ, a state is missing from
+                new_basis, or the mapping is not one-to-one.
         """
 
         if not isinstance(new_basis, FusionBasis):
@@ -310,7 +415,27 @@ class FusionBasis:
         state: dict,
         path: tuple,
     ) -> Charge:
-        """Return the charge of a leaf or internal node at path."""
+        """
+        Return the fusion charge at a path in the current tree.
+
+        For an Anyon leaf, reads its fixed charge from the Anyon object.
+        For an internal node, reads the charge assigned to that path in
+        the given basis state.
+
+        Args:
+            state:
+                A basis state containing internal-node charges in "labels".
+            path:
+                Path from the tree root to the requested node.
+
+        Returns:
+            Charge: The charge of the leaf or internal node.
+
+        Raises:
+            TypeError: If state is not a dictionary or path is not a tuple.
+            ValueError: If the path does not exist or an internal-node
+                charge is missing from the state.
+        """
 
         if not isinstance(state, dict):
             raise TypeError("state must be a dictionary.")
@@ -335,7 +460,25 @@ class FusionBasis:
 
 
     def get_cluster_labels(self, state: dict) -> dict:
-        """Map each internal leaf-ID cluster to its fusion charge."""
+        """
+        Map each internal anyon cluster to its fusion charge in a state.
+
+        Traverses the tree structure saved when this basis was built.
+        Each key is a frozenset of the anyon IDs below an internal node;
+        its value is that node's charge from state["labels"].
+
+        Args:
+            state:
+                A basis state containing charges for the internal nodes.
+
+        Returns:
+            dict: A new mapping from anyon-ID clusters to their charges.
+
+        Raises:
+            TypeError: If state is not a dictionary.
+            ValueError: If state has no "labels" entry or a charge is
+                missing for an internal node.
+        """
 
         if not isinstance(state, dict):
             raise TypeError("state must be a dictionary.")
@@ -367,8 +510,22 @@ class FusionBasis:
 
     @staticmethod
     def _state_key(labels: dict) -> tuple:
-        """Return an immutable, consistently ordered state-label key."""
+        """
+        Convert internal-node labels into a consistent lookup key.
 
+        Sorts the (path, charge) pairs by path, so dictionaries with the
+        same labels produce the same key regardless of insertion order.
+
+        Args:
+            labels:
+                A mapping from internal-node paths to their charges.
+
+        Returns:
+            tuple: The sorted (path, charge) pairs.
+
+        Raises:
+            TypeError: If labels is not a dictionary.
+        """
         if not isinstance(labels, dict):
             raise TypeError(
                 "labels must be a dictionary."
@@ -383,7 +540,23 @@ class FusionBasis:
 
 
     def get_state(self, index: int) -> dict:
-        """Return the basis state stored at a physical index."""
+        """
+        Return the basis state at a physical index.
+
+        Returns the stored dictionary itself, without copying it.
+        Changing the returned dictionary would change the basis data.
+
+        Args:
+            index:
+                A physical basis index.
+
+        Returns:
+            dict: The state and its internal-node charge labels.
+
+        Raises:
+            TypeError: If index is not an integer or is a boolean.
+            IndexError: If index is outside the basis.
+        """
 
         if isinstance(index, bool) or not isinstance(index, int):
             raise TypeError(
@@ -399,8 +572,24 @@ class FusionBasis:
 
 
     def get_index(self, state: dict) -> int:
-        """Return the physical index of a state in this fusion basis."""
+        """
+        Return the physical basis index of a state.
 
+        Looks up the state by its internal-node charge labels. The state's
+        "total" field is not used for this lookup.
+
+        Args:
+            state:
+                A state containing a "labels" dictionary.
+
+        Returns:
+            int: The state's index in this basis.
+
+        Raises:
+            TypeError: If state is not a dictionary.
+            ValueError: If "labels" is missing or its labels do not match
+                a state in this basis.
+        """
         if not isinstance(state, dict):
             raise TypeError(
                 "state must be a dictionary."
@@ -422,8 +611,20 @@ class FusionBasis:
 
 
     def _is_computational(self, state: dict) -> bool:
-        """Return whether a physical state encodes valid logical qubits."""
+        """
+        Return whether a physical state belongs to the computational subspace.
 
+        A state is computational when the fusion charge at the root of
+        every four-anyon qubit block is VACUUM. Assumes qubit_paths has
+        already been built for the current tree structure.
+
+        Args:
+            state:
+                A basis state containing internal-node charges in "labels".
+
+        Returns:
+            bool: True if every qubit block has VACUUM total charge.
+        """
         return all(
             state["labels"][paths["root"]]
             is Charge.VACUUM
@@ -432,7 +633,23 @@ class FusionBasis:
 
 
     def _get_logical_label(self, state: dict) -> str:
-        """Decode the logical bitstring of a computational state."""
+        """
+        Decode the bitstring represented by a computational basis state.
+
+        For each qubit block, the left pair's fusion charge encodes one
+        bit: VACUUM is "0" and TAU is "1". Bits are returned in qubit-ID
+        order, from 0 to n-1.
+
+        Args:
+            state:
+                A basis state containing internal-node charges in "labels".
+
+        Returns:
+            str: The logical bitstring represented by the state.
+
+        Raises:
+            ValueError: If the state is outside the computational subspace.
+        """
 
         if not self._is_computational(state):
             raise ValueError(
@@ -458,7 +675,20 @@ class FusionBasis:
 
 
     def _classify_states(self) -> None:
-        """Classify states and build logical-to-physical mappings."""
+        """
+        Classify physical basis states and build logical index mappings.
+
+        Adds each state's index to computational_indices or leakage_indices.
+        For computational states, maps the decoded bitstring to its physical
+        index and builds the reverse mapping. Leakage states remain in states.
+
+        Assumes qubit_paths has been built and the classification containers
+        are empty.
+
+        Raises:
+            ValueError: If two computational states decode to the same
+                logical bitstring.
+        """
 
         for index, state in enumerate(self.states):
             if not self._is_computational(state):
