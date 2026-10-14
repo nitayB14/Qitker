@@ -17,20 +17,19 @@ For the complete circuit-building API, see the [API reference (D5)](https://gith
 
 Qitker requires Python 3.11 or newer. Run the installation commands with the same Python interpreter that you use to run your programs. Installation is needed once per Python environment.
 
-### Install the published TestPyPI release
+### Install from PyPI
 
-Version `1.0.0a2` is available on [TestPyPI](https://test.pypi.org/project/qitker/1.0.0a2/). Install NumPy from the main PyPI index, then install Qitker from TestPyPI:
+Install Qitker version `1.0.0` and its NumPy dependency from PyPI:
 
 ```powershell
-python -m pip install "numpy>=2.4,<3"
-python -m pip install --index-url https://test.pypi.org/simple/ --no-deps "qitker==1.0.0a2"
+python -m pip install "qitker==1.0.0"
 python -m pip check
 ```
 
-The `--no-deps` option keeps pip from looking for dependencies on TestPyPI. Qiskit is optional; to enable `exportCircuit("qiskit")`, also install:
+For Qiskit export support, install the optional dependency:
 
 ```powershell
-python -m pip install "qiskit==2.3.1"
+python -m pip install "qitker[qiskit]==1.0.0"
 ```
 
 ### Install from source
@@ -60,7 +59,7 @@ python -m pip check
 
 The `qitker[qiskit]` extra provides circuit export; use `requirements.txt` for the simulation and plotting examples below. This requirements file installs dependencies only. Qitker itself must be installed separately using one of the commands above.
 
-The example scripts and `requirements.txt` are available in this repository and are not included in the installed Qitker wheel. Download them or clone the repository to run the examples. For testing the published release on another computer, use the TestPyPI installation commands rather than installing from source.
+The example scripts and `requirements.txt` are available in this repository and are not included in the installed Qitker wheel. Download them or clone the repository to run the examples. For testing the published release on another computer, use the PyPI installation commands above rather than installing from source.
 
 ## Quick start: anyonic execution
 
