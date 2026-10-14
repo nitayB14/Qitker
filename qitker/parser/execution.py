@@ -9,22 +9,28 @@ from qitker.parser import routing
 seqOp = sequenceOperation()
 
 class execution:
-    """
-    Integration layer between compiler <-> anyons
-    
-    Attributes:
-        - braidsNumber : int
-            number of braids in circuit      
-        - circuit : circuit
-            our circuit
-        - fusionSystem : FusionSystem
-            represent the physic of anyons
-    """
+    """Connect a circuit's recorded operations to the anyonic backend.
 
+    Supported gates are converted to braid sequences and applied to a
+    FusionSystem when convert() is called.
+
+    Attributes:
+        _circuit: The circuit whose operations will be executed.
+        _fusionSystem: The anyonic system used for this execution.
+        _braidsNumber: Number of braids applied, including routing braids.
+    """
 
     # initialize execution class
     def __init__(self, circuit):
-       
+        """Prepare a fresh anyonic system for the given circuit.
+
+        Creates a FusionSystem for the circuit's qubits and sets the
+        braid count to zero. No gates are applied until convert() is called.
+
+        Args:
+            circuit: The circuit to execute.
+        """
+
         self._braidsNumber = 0
         
         self._circuit = circuit
@@ -34,16 +40,15 @@ class execution:
 
   
     def convert(self):
-        """
-        Convert quantum operation(gate) to braids 
-        Call fidelity function
+        """Apply the circuit's recorded gates to the anyonic system.
 
-        Args:
-            - circuit (circuit):
-                circuit of user
+        Processes operations in order and skips barriers. For each gate,
+        updates the ideal logical state and then applies its physical
+        braid sequence through applyGate().
 
-        Returns:
-            - None
+        Raises:
+            NotImplementedError: If a gate has more than two controls,
+                or a required braid sequence has not been implemented.
         """
         
         op = self._circuit.getOperationVector()
@@ -75,6 +80,20 @@ class execution:
 
     
     def applyGate(self, opType):
+        """Apply one gate using a stored braid sequence.
+
+        An uncontrolled gate's sequence is shifted to its target qubit.
+        For a controlled gate, the participating qubits are routed into
+        the order expected by the sequence and routed back afterward.
+
+        Args:
+            opType: Gate record containing a name, target, and optional controls.
+
+        Raises:
+            NotImplementedError: If no stored sequence exists for the gate;
+                automatic sequence construction is not implemented.
+        """
+
         name = opType.getName().upper()
         target = opType.getTarget()
 
@@ -134,6 +153,9 @@ class execution:
 
             
     def applySequence(self, seq):
+        """
+        Apply sigma on each index of sequence
+        """
         for index in seq:
             self._fusionSystem.sigma_global(index)
             self._braidsNumber += 1
@@ -162,20 +184,30 @@ class execution:
 
 
     def measure(self, shots):
-        """
-        Measures the quantum state multiple times.
+        """Sample the current state and count the decoded outcomes.
 
         Args:
-            - shots (int): 
-                Number of measurement repetitions.
+            shots (int): Number of samples; must be at least 1.
 
         Returns:
-            (dict[int, int]): Measurement counts for each basis state.
+            dict[str, int]: Counts by logical bitstring, with a "LEAKAGE"
+            entry if leakage was sampled.
         """
 
         return self._fusionSystem.hilbertSpace.run_measurements(shots=shots)
     
+
     def getLeakageProbability(self):
+        """Return the probability of leakage from the computational subspace.
+
+        Returns:
+            float: Total probability in physical leakage states, from 0 to 1.
+
+        Raises:
+            RuntimeError: If the current fusion basis cannot classify
+                computational and leakage states.
+        """
+
         probability = (
             self._fusionSystem
             .hilbertSpace
@@ -188,9 +220,13 @@ class execution:
 
 
     def build_sequence(self, gate_key: str,) -> dict:
-        """
-        Search for or construct a physical braid sequence for a gate
-        that is not present in the saved sequence database.
+        """Reject automatic braid synthesis for a gate without a stored sequence.
+
+        Args:
+            gate_key: Key identifying the gate, such as "CX".
+
+        Raises:
+            NotImplementedError: Always; automatic synthesis is not implemented.
         """
 
         raise NotImplementedError(

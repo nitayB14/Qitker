@@ -1,3 +1,5 @@
+"""Coordinate Fibonacci fusion trees, bases, state evolution, and braiding."""
+
 import numpy as np
 
 from qitker.anyons.Anyon import Anyon, Charge
@@ -10,22 +12,35 @@ from qitker.anyons.FusionCache import FusionCache
 
 
 class FusionSystem:
-    """
-    Represents a global system of Fibonacci anyonic qubits.
+    """Manage a shared fusion tree, basis, and HilbertSpace for logical qubits.
 
-    Braiding convention:
-        An anyon ID represents a permanent physical identity.
+    Anyon IDs are permanent identities. Braids act on current leaf positions;
+    each logical block occupies four consecutive positions. Original qubit
+    ownership remains available through the ID-based lookup helpers.
 
-        The position of an anyon is determined by its current
-        position in the flattened FusionTree.
-
-        An R-move exchanges the positions of two sibling anyons
-        while preserving their IDs.
+    F-moves regroup the tree and transform amplitudes into the new basis.
+    R-moves apply channel phases and exchange sibling leaves. Public physical
+    operations record history and restore their entry state on failure.
+    Derived cache entries and counters are not rolled back.
     """
 
     BRAID_CONVENTION = "MOVING_ANYON_IDENTITIES"
 
     def __init__(self, qubits_num: int, cache_enabled: bool = True,):
+        """Create four TAU anyons per qubit and initialize logical |00...0>.
+
+        Builds paired qubit subtrees, a global VACUUM-charge basis, and the
+        corresponding HilbertSpace. History starts empty; the cache is private
+        to this system.
+
+        Args:
+            qubits_num: Number of logical qubits, from 1 to 10.
+            cache_enabled: Whether to reuse derived bases and operation plans.
+
+        Raises:
+            TypeError: If an argument has an invalid type.
+            ValueError: If qubits_num is outside the supported range.
+        """
 
         if not isinstance(qubits_num, int):
             raise TypeError("qubits_num must be an integer.")
@@ -59,7 +74,7 @@ class FusionSystem:
 
     def get_qubit(self, qubit_id):
         """
-        Returns the AnyonicQubit with the given ID.
+        Return the original AnyonicQubit object for a zero-based qubit ID.
         """
 
         if not isinstance(qubit_id, int):
@@ -80,7 +95,7 @@ class FusionSystem:
 
     def get_anyon(self, anyon_id):
         """
-        Returns the Anyon with the given ID.
+        Return an Anyon by its permanent ID, regardless of current position.
         """
 
         if (isinstance(anyon_id, bool) or not isinstance(anyon_id, int)):
@@ -112,7 +127,10 @@ class FusionSystem:
 
     def get_current_qubit_block(self,qubit_id: int,) -> tuple[Anyon, ...]:
         """
-        Return the four anyons currently occupying a logical-qubit block.
+        Return the four anyons currently occupying a zero-based qubit block.
+
+        Selects consecutive leaves in current tree order, which may differ
+        from the anyons originally assigned to that qubit.
         """
 
         if isinstance(qubit_id, bool) or not isinstance(qubit_id, int):
@@ -134,7 +152,11 @@ class FusionSystem:
 
     def _capture_state_snapshot(self) -> dict:
         """
-        Capture the state required to roll back an atomic operation.
+        Capture the physical state needed to roll back a braid or F/R move.
+
+        Copies the statevector and local braid matrices, shallow-copies
+        history, and retains tree-structure and basis references. Cache data
+        and the separate ideal reference state are not part of the snapshot.
         """
 
         return {
@@ -149,7 +171,9 @@ class FusionSystem:
 
     def _restore_state_snapshot(self, snapshot: dict,) -> None:
         """
-        Restore tree, basis, and HilbertSpace after a failed operation.
+        Restore physical state, history, and local braids from a snapshot.
+
+        Cache contents and the ideal reference state are left unchanged.
         """
 
         self.tree.structure = snapshot["tree_structure"]
@@ -163,7 +187,9 @@ class FusionSystem:
 
     def get_qubit_of_anyon(self, anyon_id):
         """
-        Returns the AnyonicQubit that owns the given anyon.
+        Return the qubit originally assigned to the given permanent anyon ID.
+
+        Uses the initial four-ID grouping, not the anyon's current position.
         """
 
         anyon = self.get_anyon(anyon_id)
@@ -174,7 +200,7 @@ class FusionSystem:
 
     def are_same_qubit(self, first_id, second_id):
         """
-        Returns True if both anyons belong to the same logical qubit.
+        Return whether the anyon IDs share the same original qubit owner.
         """
 
         first_qubit = self.get_qubit_of_anyon(first_id)
@@ -184,7 +210,7 @@ class FusionSystem:
 
     def are_neighbor_qubits(self, first_id, second_id):
         """
-        Returns True if the two anyons belong to neighboring logical qubits.
+        Return whether the original qubit owners have consecutive IDs.
         """
 
         first_qubit = self.get_qubit_of_anyon(first_id)
@@ -194,10 +220,11 @@ class FusionSystem:
 
     def get_local_pair_type(self, first_id, second_id):
         """
-        Returns the local pair type inside a logical qubit:
-        'left', 'middle', or 'right'.
+        Return 'left', 'middle', or 'right' for an original local anyon pair.
 
-        Returns None if the anyons do not form a valid local pair.
+        Uses permanent IDs within their initial four-anyon group, ignoring
+        argument order. Returns None if they are not consecutive within the
+        same original group. Does not inspect current tree positions.
         """
 
         if not self.are_same_qubit(first_id, second_id):
@@ -222,7 +249,7 @@ class FusionSystem:
 
     def _create_anyons(self):
         """
-        Creates four anyons for every anyonic qubit.
+        Append four TAU anyons per qubit, with consecutive IDs starting at 1.
         """
 
         anyons_num = self.qubits_num * 4
@@ -240,7 +267,7 @@ class FusionSystem:
 
     def _create_qubits(self):
         """
-        Groups every four anyons into one AnyonicQubit.
+        Append qubits with IDs starting at 0, grouping consecutive anyons.
         """
 
         for qubit_id in range(self.qubits_num):
@@ -259,7 +286,7 @@ class FusionSystem:
 
     def _build_global_structure(self):
         """
-        Builds the initial global fusion-tree structure.
+        Return the global tree built from each qubit's ((a, b), (c, d)) block.
         """
 
         qubit_subtrees = []
@@ -279,7 +306,10 @@ class FusionSystem:
 
     def _combine_subtrees(self, subtrees):
         """
-        Combines a list of subtrees into one binary tree.
+        Pair neighboring subtrees recursively, preserving their leaf order.
+
+        An unpaired subtree advances to the next level unchanged.
+        Assumes subtrees is nonempty.
         """
 
         if len(subtrees) == 1:
@@ -302,6 +332,10 @@ class FusionSystem:
         return self._combine_subtrees(next_level)
 
     def record_operation(self, operation):
+        """Append an AnyonOperation to history without executing it.
+
+        Raises TypeError for any other object type.
+        """
         if not isinstance(operation, AnyonOperation):
             raise TypeError("operation must be an AnyonOperation object.")
 
@@ -309,6 +343,7 @@ class FusionSystem:
 
 
     def get_operation_history(self):
+        """Return numbered descriptions joined by newlines, or an empty string."""
         lines = []
 
         for number, operation in enumerate(
@@ -366,12 +401,18 @@ class FusionSystem:
 
 
     def clear_operation_history(self):
+        """Clear recorded operations without changing the simulated state."""
         self.operation_history.clear()
 
     def addOperationToIdealMatrix(
         self,
         operation,
     ):
+        """Apply an operation to the ideal reference through HilbertSpace.
+
+        Reads getName(), getTarget(), and optionally getControllers() from
+        operation. Updates ideal amplitudes and history, not physical braids.
+        """
 
         controllers = (
             tuple(
@@ -392,7 +433,11 @@ class FusionSystem:
 
     def _commit_basis_state(self, new_basis: FusionBasis, new_state_vector,) -> None:
         """
-        Atomically install a validated basis and statevector.
+        Validate and install a basis and a copy of its physical statevector.
+
+        Requires the basis to describe the current tree and the vector shape
+        to match its dimension. Synchronizes HilbertSpace and checks coherence.
+        The calling operation is responsible for rollback if an error occurs.
         """
 
         if not isinstance(new_basis, FusionBasis):
@@ -428,6 +473,7 @@ class FusionSystem:
         self._validate_system_coherence()
 
     def _validate_system_coherence(self) -> None:
+        """Raise RuntimeError if tree, shared basis, or vector dimensions differ."""
         if self.basis.tree_signature != self.tree.to_ids():
             raise RuntimeError("FusionBasis does not match FusionTree.")
 
@@ -445,7 +491,15 @@ class FusionSystem:
 
     def _apply_r_move(self, first_id: int, second_id: int, inverse: bool = False,) -> dict:
         """
-        Atomically apply a quantum R-move to sibling anyons.
+        Apply R phases and swap two sibling anyons identified by permanent IDs.
+
+        inverse selects conjugate phases. Rebuilds or reuses the resulting
+        basis, reindexes amplitudes, and commits after checking norm preservation.
+        Works in temporary physical bases as well as logically classified ones.
+
+        Returns move metadata: type, inverse, IDs, parent path, and the before
+        and after ID trees. Does not record history; restores the physical
+        snapshot on failure.
         """
 
         if not isinstance(inverse, bool):
@@ -492,6 +546,7 @@ class FusionSystem:
             )
         )
             
+            # Phases use the old basis; the exchanged leaves define the new one.
             self.tree._swap_siblings(first_id, second_id,)
             
             classify_logical = (self._tree_supports_logical_classification())
@@ -552,7 +607,10 @@ class FusionSystem:
         )
 
     def _tree_supports_logical_classification(self) -> bool:
-        """Return whether every positional qubit has its expected nodes."""
+        """Check that each current four-leaf block and both pairs form subtrees.
+
+        This tests tree structure only, not the state's leakage probability.
+        """
 
         current_anyons = self.tree.flatten()
 
@@ -573,13 +631,24 @@ class FusionSystem:
                 common_path = FusionBasis._common_path(paths)
                 subtree = self.tree.get_node_at_path(common_path)
 
+                # A common ancestor is sufficient only if it has no extra leaves.
                 if self.tree.flatten(subtree) != list(group):
                     return False
 
         return True
 
     def _apply_f_move(self, path: tuple, direction: str,) -> dict:
-        """Atomically apply a quantum F-move and change basis."""
+        """Regroup a subtree and transform amplitudes into the resulting basis.
+
+        path uses 0/1 steps from the root; () selects the root. direction is
+        "right" for ((a, b), c) -> (a, (b, c)), or "left" for the inverse.
+        Leaf order is preserved. Logical classification may become unavailable
+        until a compatible tree shape is restored.
+
+        Returns type, path, direction, and before/after ID trees without
+        recording history. Checks norm preservation and restores the physical
+        snapshot on failure.
+        """
 
         if not isinstance(path, tuple):
             raise TypeError("path must be a tuple.")
@@ -617,12 +686,15 @@ class FusionSystem:
                     )
                 old_intermediate = old_subtree[1]
 
+            # Identify the changing channel by its leaves across both trees.
             old_intermediate_cluster = (
                 self._leaf_id_cluster(old_intermediate)
             )
 
             self.tree.FMove(path, direction)
 
+            # The tree has changed; HilbertSpace still holds the old basis and
+            # amplitudes until the transformed vector is ready to commit.
             new_subtree = self.tree.get_node_at_path(path)
             new_intermediate = (
                 new_subtree[1]
@@ -638,6 +710,7 @@ class FusionSystem:
             )
 
             new_basis = self._get_or_build_basis(classify_logical=classify_logical,)
+            # The old/new clusters identify the channel replaced by this F-move.
             f_plan = self._get_or_build_f_plan(
                 old_basis=old_basis,
                 new_basis=new_basis,
@@ -686,6 +759,12 @@ class FusionSystem:
 
 
     def apply_f_move(self,path: tuple,direction: str,) -> None:
+        """Apply an F-move and record one F_MOVE entry.
+
+        path and direction follow _apply_f_move. Updates the tree, basis, and
+        amplitudes; a temporary basis may have no logical classification.
+        Rolls back the physical state and history if any step fails.
+        """
         snapshot = self._capture_state_snapshot()
 
         try:
@@ -712,6 +791,12 @@ class FusionSystem:
 
 
     def apply_r_move(self,first_id: int,second_id: int,inverse: bool = False,) -> None:
+        """Braid sibling anyon IDs and record one R_MOVE entry.
+
+        Applies channel phases, swaps leaves, and updates the basis and vector.
+        inverse selects the inverse braid. Rolls back physical state and
+        history if any step fails, including history recording.
+        """
         snapshot = self._capture_state_snapshot()
 
         try:
@@ -740,6 +825,7 @@ class FusionSystem:
             raise
 
     def _validate_adjacent_anyons(self, first_id: int, second_id: int,) -> None:
+        """Require two existing, distinct IDs adjacent in current left-to-right order."""
         self.get_anyon(first_id)
         self.get_anyon(second_id)
 
@@ -761,6 +847,7 @@ class FusionSystem:
             )
 
     def _find_lca_path(self, first_id: int, second_id: int, ) -> tuple:
+        """Return the deepest common ancestor path of an ordered adjacent pair."""
         self._validate_adjacent_anyons(
             first_id,
             second_id,
@@ -775,6 +862,13 @@ class FusionSystem:
         ])
 
     def _recouple_adjacent_anyons(self, first_id: int, second_id: int,) -> tuple:
+        """Apply F-moves until an ordered adjacent pair of anyon IDs are siblings.
+
+        Starts at their common ancestor and rotates inward, preserving leaf
+        order while updating the basis and amplitudes at each step. Returns
+        a tuple of (path, direction) steps for _undo_recoupling.
+        Does not record history; restores the entry snapshot on failure.
+        """
         self._validate_adjacent_anyons(
             first_id,
             second_id,
@@ -804,6 +898,8 @@ class FusionSystem:
 
                 left, right = subtree
 
+                # Adjacency puts first_id at the right edge of left, and
+                # second_id at the left edge of right.
                 left_ids = self._leaf_id_cluster(left)
                 right_ids = self._leaf_id_cluster(right)
 
@@ -816,6 +912,7 @@ class FusionSystem:
                         "across the expected subtree."
                     )
 
+                # Expose the boundary leaves by rotating into the pair's branch.
                 if isinstance(left, tuple):
                     self._apply_f_move(
                         current_path,
@@ -827,6 +924,7 @@ class FusionSystem:
                         "right",
                     ))
 
+                    # After the right rotation, both target leaves lie on the right.
                     current_path = current_path + (1,)
                     continue
 
@@ -841,6 +939,7 @@ class FusionSystem:
                         "left",
                     ))
 
+                    # After the left rotation, both target leaves lie on the left.
                     current_path = current_path + (0,)
                     continue
 
@@ -857,6 +956,12 @@ class FusionSystem:
         return tuple(steps)
 
     def _undo_recoupling(self, steps: tuple,) -> None:
+        """Apply inverse F-moves in reverse order for recorded recoupling steps.
+
+        Each step is (path, direction). Restores the grouping while retaining
+        any leaf exchanges made since recoupling; it does not undo an intervening
+        R-move. Does not record history. On failure, restores its entry snapshot.
+        """
         if not isinstance(steps, tuple):
             raise TypeError(
                 "steps must be a tuple."
@@ -905,6 +1010,12 @@ class FusionSystem:
 
 
     def _validate_local_sigma_inputs(self, qubit_id: int, index: int, ) -> None:
+        """Validate a qubit ID, signed local generator, and classified basis.
+
+        Requires a zero-based qubit ID and index in +/-1, +/-2, +/-3.
+        Raises TypeError for non-integer or boolean inputs, ValueError for
+        invalid ranges, or RuntimeError if logical classification is absent.
+        """
         if (
             isinstance(qubit_id, bool)
             or not isinstance(qubit_id, int)
@@ -937,6 +1048,12 @@ class FusionSystem:
             )
     
     def _validate_global_sigma_input(self, index: int,) -> None:
+        """Validate a signed generator between adjacent global positions.
+
+        Requires 1 <= abs(index) < len(anyons) and a classified logical basis.
+        Raises TypeError for non-integer or boolean input, ValueError for an
+        invalid range, or RuntimeError if logical classification is absent.
+        """
         if (
             isinstance(index, bool)
             or not isinstance(index, int)
@@ -961,6 +1078,11 @@ class FusionSystem:
     
     
     def _global_to_local_sigma(self, index: int,) -> tuple[int, int]:
+        """Return (qubit_id, signed_local_index) for a non-boundary generator.
+
+        Uses current positional blocks. Rejects multiples of four, which
+        exchange anyons across block boundaries, and preserves the sign.
+        """
         self._validate_global_sigma_input(index)
 
         global_index = abs(index)
@@ -982,6 +1104,18 @@ class FusionSystem:
 
 
     def sigma(self, qubit_id: int, index: int) -> None:
+        """Braid neighboring positions within a current four-anyon qubit block.
+
+        Args:
+            qubit_id: Zero-based positional block index.
+            index: Signed local generator: +/-1, +/-2, or +/-3. The magnitude
+                selects positions i and i+1; negative selects the inverse braid.
+
+        Generators 1 and 3 apply R directly; generator 2 uses two F-moves,
+        R, then inverse regrouping. Requires and restores logical topology,
+        updates the local braid operator, and records one SIGMA entry.
+        Restores physical state and history on failure.
+        """
         self._validate_local_sigma_inputs(qubit_id, index,)
 
         snapshot = self._capture_state_snapshot()
@@ -1014,6 +1148,7 @@ class FusionSystem:
                 )
 
             else:
+                # Make the middle leaves siblings, braid, then restore grouping.
                 inner_path = qubit_path + (1,)
 
                 self._apply_f_move(
@@ -1070,6 +1205,17 @@ class FusionSystem:
     
 
     def _apply_cross_qubit_sigma(self, global_index: int, inverse: bool = False,) -> dict:
+        """Braid the current leaves on either side of a qubit-block boundary.
+
+        global_index is the positive, one-based left position and must be a
+        multiple of four; the right position is global_index + 1. Recouples
+        the leaves with F-moves, applies R, then undoes the regrouping.
+
+        Returns IDs, recoupling steps, and before/after tree and order metadata.
+        Restores logical topology but may create leakage. Checks norm and leaf
+        order, and restores the entry snapshot on failure. Does not record
+        history or update local braid matrices.
+        """
         if not isinstance(inverse, bool):
             raise TypeError(
                 "inverse must be a boolean."
@@ -1143,6 +1289,7 @@ class FusionSystem:
                     "statevector norm."
                 )
 
+            # F-moves preserve leaf order, so only the R pair should be exchanged.
             expected_order = list(order_before)
             left = global_index - 1
             right = global_index
@@ -1181,6 +1328,14 @@ class FusionSystem:
         }
 
     def sigma_global(self, index: int,) -> None:
+        """Braid current global positions abs(index) and abs(index) + 1.
+
+        Positions are one-based; a negative index selects the inverse braid.
+        Requires a logically classified basis. Within a qubit block, delegates
+        to sigma and records SIGMA. At a block boundary, recouples across blocks
+        and records one SIGMA_GLOBAL entry, hiding the internal F/R steps.
+        Failed operations restore physical state and history.
+        """
         self._validate_global_sigma_input(index)
 
         global_index = abs(index)
@@ -1244,11 +1399,11 @@ class FusionSystem:
         self.cache.clear()
 
     def set_cache_enabled(self, enabled: bool) -> None:
-        """Enable or disable cache use for future requests."""
+        """Enable or disable future cache use, preserving entries and counters."""
         self.cache.enabled = enabled
 
     def _get_basis_cache_key(self, classify_logical: bool,) -> tuple:
-        """Return the cache key for the current fusion-tree basis."""
+        """Key the ID tree, original qubit groups, VACUUM total, and classification."""
 
         tree_signature = self.tree.to_ids()
 
@@ -1265,7 +1420,13 @@ class FusionSystem:
         )
 
     def _get_or_build_basis(self, classify_logical: bool,) -> FusionBasis:
-        """Return a cached basis or build and cache a new one."""
+        """Return a validated cached basis or build one for the current tree.
+
+        Uses total VACUUM charge. classify_logical controls positional qubit
+        paths and logical/leakage mappings; False still builds the full physical
+        basis. Stores new bases only when caching is enabled. Does not install
+        the returned basis into the system or HilbertSpace.
+        """
         key = self._get_basis_cache_key(
             classify_logical,
         )
@@ -1302,7 +1463,11 @@ class FusionSystem:
 
 
     def _validate_cached_basis(self, basis: FusionBasis, classify_logical: bool,) -> None:
-        """Verify that a cached basis belongs to this system and topology."""
+        """Check cached basis type, ID tree, qubit count, classification, and owners.
+
+        Requires the same tree and qubit-list objects as this system.
+        Raises TypeError for a non-basis or RuntimeError for a mismatch.
+        """
         if not isinstance(basis, FusionBasis):
             raise TypeError(
                 "Cached basis must be a FusionBasis."
@@ -1336,6 +1501,11 @@ class FusionSystem:
 
 
     def _get_or_build_reindex_map(self, old_basis: FusionBasis, new_basis: FusionBasis,) -> tuple[int, ...]:
+        """Return a cached or computed old-index to new-index mapping.
+
+        The bases must contain matching fusion-label states. Cached by the
+        two basis objects; this does not transform amplitudes.
+        """
         return self.cache.get_or_build(
             namespace="reindex",
             key=(old_basis, new_basis),
@@ -1349,6 +1519,7 @@ class FusionSystem:
         parent_path: tuple,
         inverse: bool,
     ) -> np.ndarray:
+        """Return R phases cached by current basis, parent path, and inverse flag."""
         return self.cache.get_or_build(
             namespace="r_plan",
             key=(
@@ -1366,6 +1537,7 @@ class FusionSystem:
         self,
         basis: FusionBasis,
     ) -> tuple[dict, ...]:
+        """Return cached or computed cluster-charge maps in the given basis order."""
         return self.cache.get_or_build(
             namespace="cluster",
             key=basis,
@@ -1384,6 +1556,15 @@ class FusionSystem:
         new_intermediate_cluster: frozenset,
         direction: str,
     ) -> tuple:
+        """Return cached or computed F-move index groups for two bases.
+
+        Intermediate clusters are frozensets of anyon IDs; direction is
+        "left" or "right". Reuses per-basis cluster maps during construction.
+        Assumes HilbertSpace still holds old_basis while the tree has already
+        been regrouped. The returned plan does not change amplitudes.
+        """
+        # Each entry is (old_indices, new_indices): one channel to copy, or
+        # two channels to mix in (VACUUM, TAU) order on both sides.
         return self.cache.get_or_build(
             namespace="f_plan",
             key=(
@@ -1408,6 +1589,7 @@ class FusionSystem:
         )
 
     def __str__(self):
+        """Return qubit and anyon counts with the current anyon-ID tree."""
         return (
             f"FusionSystem(\n"
             f"    qubits = {self.qubits_num},\n"
@@ -1418,4 +1600,5 @@ class FusionSystem:
 
 
     def __repr__(self):
+        """Return the same diagnostic summary as str(self)."""
         return self.__str__()
